@@ -28,7 +28,7 @@ def read_requirements(filename):
 
 setup(
     name="Scrapy-Distributed",
-    version="0.0.3",
+    version="0.1.0",
     url="https://github.com/Insutanto/scrapy-distributed",
     project_urls={
         "Documentation": "https://github.com/Insutanto/scrapy-distributed",
