@@ -2,12 +2,14 @@
 
 `Scrapy-Distributed` is a series of components for you to develop a distributed crawler base on `Scrapy` in an easy way.
 
-Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler` and `RedisBloom DupeFilter`. You can use either of those in your Scrapy's project very easily.
+Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Scheduler` and `RedisBloom DupeFilter`. You can use either of those in your Scrapy's project very easily.
 
 ## **Features**
 
 - RabbitMQ Scheduler
     - Support custom declare a RabbitMQ's Queue. Such as `passive`, `durable`, `exclusive`, `auto_delete`, and all other options.
+- Kafaka Scheduler
+    - Support custom declare a Kafka's Topic. Such as `num_partitions`, `replication_factor` and will support other options.
 - RedisBloom DupeFilter
     - Support custom the `key`, `errorRate`, `capacity`, `expansion` and auto-scaling(`noScale`) of a bloom filter.
 
@@ -18,6 +20,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler` and `RedisBloo
 - Pika >= 1.0.0
 - RedisBloom >= 0.2.0
 - Redis >= 3.0.1
+- kafka-python >= 1.4.7
 
 ## **Usage**
 
