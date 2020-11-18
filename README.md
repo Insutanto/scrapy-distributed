@@ -35,6 +35,7 @@ OR
 git clone https://github.com/Insutanto/scrapy-distributed.git && cd scrapy-distributed
 && python setup.py install
 ```
+## RabbitMQ Support
 
 If you don't have the required environment for tests:
 
@@ -71,6 +72,30 @@ BLOOM_DUPEFILTER_CAPACITY = 100_0000
 scrapy crawl <your_spider>
 ```
 
+## Kafka Support
+
+### **Step 1:**
+```
+SCHEDULER = "scrapy_distributed.schedulers.DistributedScheduler"
+SCHEDULER_QUEUE_CLASS = "scrapy_distributed.queues.kafka.KafkaQueue"
+KAFKA_CONNECTION_PARAMETERS = "localhost:9092"
+DUPEFILTER_CLASS = "scrapy_distributed.dupefilters.redis_bloom.RedisBloomDupeFilter"
+BLOOM_DUPEFILTER_REDIS_URL = "redis://:@localhost:6379/0"
+BLOOM_DUPEFILTER_REDIS_HOST = "localhost"
+BLOOM_DUPEFILTER_REDIS_PORT = 6379
+REDIS_BLOOM_PARAMS = {
+    "redis_cls": "redisbloom.client.Client"
+}
+BLOOM_DUPEFILTER_ERROR_RATE = 0.001
+BLOOM_DUPEFILTER_CAPACITY = 100_0000
+```
+
+### **Step 2:**
+
+```
+scrapy crawl <your_spider>
+```
+
 ## **TODO**
 
 - RabbitMQ Item Pipeline
@@ -79,7 +104,7 @@ scrapy crawl <your_spider>
 - Custom Interface for DupeFilter
 - RocketMQ Scheduler
 - RocketMQ Item Pipeline
-- Kafka Scheduler
+- ~~Kafka Scheduler~~
 - Kafka Item Pipeline
 
 ## **Reference Project**

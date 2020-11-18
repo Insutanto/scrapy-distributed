@@ -9,9 +9,6 @@
 
 BOT_NAME = 'simple_example'
 
-SPIDER_MODULES = ['simple_example.spiders']
-NEWSPIDER_MODULE = 'simple_example.spiders'
-
 SPIDER_MODULES = ["simple_example.spiders"]
 NEWSPIDER_MODULE = "simple_example.spiders"
 SCHEDULER = "scrapy_distributed.schedulers.DistributedScheduler"

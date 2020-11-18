@@ -15,7 +15,7 @@ from scrapy.utils.deprecate import ScrapyDeprecationWarning
 logger = logging.getLogger(__name__)
 
 
-class DistributedScheduler(Scheduler):
+class DistributedQueueScheduler(Scheduler):
     def __init__(
         self,
         dupe_filter,
@@ -29,7 +29,7 @@ class DistributedScheduler(Scheduler):
         jobdir=None,
         crawler=None,
     ):
-        super(DistributedScheduler, self).__init__(
+        super(DistributedQueueScheduler, self).__init__(
             dupefilter=dupe_filter,
             jobdir=jobdir,
             logunser=logunser,
@@ -73,10 +73,6 @@ class DistributedScheduler(Scheduler):
         dqclass = load_object(settings["SCHEDULER_DISK_QUEUE"])
         mqclass = load_object(settings["SCHEDULER_MEMORY_QUEUE"])
         logunser = settings.getbool("SCHEDULER_DEBUG")
-        logger.error(dir(queue_class))
-        logger.error(queue_class.__class__)
-        logger.error(isinstance(queue_class, KafkaQueue))
-        logger.error(type(queue_class) is KafkaQueue)
         if queue_class == RabbitQueue:
             connection_conf = rabbit_connection_conf
         elif queue_class == KafkaQueue:
@@ -99,7 +95,7 @@ class DistributedScheduler(Scheduler):
         )
 
     def open(self, spider):
-        logger.info("DistributedScheduler, open")
+        logger.info("DistributedQueueScheduler, open")
         self.spider = spider
         if not hasattr(spider, "name"):
             msg = "Please set name parameter to spider. "
