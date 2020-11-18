@@ -1,6 +1,5 @@
-from logging import log
-from scrapy.utils.misc import load_object
 import logging
+from scrapy.utils.misc import load_object
 
 logger = logging.getLogger(__name__)
 

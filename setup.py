@@ -18,17 +18,9 @@ def read_rst(filename):
     )
 
 
-def read_requirements(filename):
-    return [
-        line.strip()
-        for line in read_file(filename).splitlines()
-        if not line.startswith("#")
-    ]
-
-
 setup(
     name="Scrapy-Distributed",
-    version="0.1.1",
+    version="2020.11.0",
     url="https://github.com/Insutanto/scrapy-distributed",
     project_urls={
         "Documentation": "https://github.com/Insutanto/scrapy-distributed",
@@ -62,5 +54,11 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.6",
-    install_requires=read_requirements("requirements-install.txt"),
+    install_requires=[
+        "scrapy>=1.8.0",
+        "pika>=1.0.0",
+        "redisbloom>=0.2.0",
+        "redis>=3.0.1",
+        "kafka-python>=1.4.7"
+    ],
 )
