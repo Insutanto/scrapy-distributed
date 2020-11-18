@@ -87,6 +87,9 @@ class SimpleExampleDownloaderMiddleware:
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
+        response.request = request
+        # print(f"process_response, response.meta: {response.meta}")
+        # print(f"process_response, request.meta: {request.meta}")
         return response
 
     def process_exception(self, request, exception, spider):
@@ -97,6 +100,7 @@ class SimpleExampleDownloaderMiddleware:
         # - return None: continue processing this exception
         # - return a Response object: stops process_exception() chain
         # - return a Request object: stops process_exception() chain
+        print(f"process_exception: {request}")
         pass
 
     def spider_opened(self, spider):

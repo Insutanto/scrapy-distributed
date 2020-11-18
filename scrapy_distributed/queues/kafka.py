@@ -1,39 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import json
 import logging
-
+from logging import log
 from scrapy.http.request import Request
-from scrapy_distributed.queues.common import BytesDump, keys_string
 from scrapy.utils.misc import load_object
 
 from scrapy.utils.reqser import _get_method, request_to_dict
 from w3lib.util import to_unicode
+from scrapy_distributed.queues.common import BytesDump, keys_string
+
+from kafka.admin import KafkaAdminClient, NewTopic
+from kafka import KafkaProducer
+from kafka import KafkaConsumer
 from scrapy_distributed.queues import IQueue
 import time
 
-import pika
-
-from scrapy_distributed.amqp_utils import connection
 
 logger = logging.getLogger(__name__)
 
 
-class RabbitQueueConfig(object):
+class KafkaQueueConfig(object):
     def __init__(
         self,
-        name,
-        passive=False,
-        durable=False,
-        exclusive=False,
-        auto_delete=False,
+        topic,
+        num_partitions=10,
+        replication_factor=3,
         arguments=None,
     ):
-        self.name = name
-        self.passive = passive
-        self.durable = durable
-        self.exclusive = exclusive
-        self.auto_delete = auto_delete
+        self.topic = topic
+        self.num_partitions = num_partitions
+        self.replication_factor = replication_factor
         self.arguments = arguments
 
 
@@ -60,129 +59,122 @@ def _try_operation(function):
     return wrapper
 
 
-class RabbitQueue(IQueue):
+class KafkaQueue(IQueue):
     """Per-spider FIFO queue"""
 
     def __init__(
         self,
-        connection_url,
+        connection_conf,
         name,
-        passive=False,
-        durable=False,
-        exclusive=False,
-        auto_delete=False,
+        num_partitions = 10,
+        replication_factor = 1,
         arguments=None,
     ):
-        """Initialize per-spider RabbitMQ queue.
+        """Initialize per-spider Kafka queue.
 
         Parameters:
-            connection_url -- rabbitmq connection url
+            connection_conf -- Kafka connection_conf
             key -- rabbitmq routing key
         """
+        self.connection_conf = connection_conf
         self.name = name
-        self.connection_url = connection_url
-        self.passive = passive
-        self.durable = durable
-        self.exclusive = exclusive
-        self.auto_delete = auto_delete
+        self.topic = f"{name}.spider.queue"
+        self.num_partitions = num_partitions
+        self.replication_factor = replication_factor
         self.arguments = arguments
-        self.connection = None
-        self.channel = None
+        self.admin_client = None
+        self.producer = None
+        self.consumer = None
         self.connect()
 
     @classmethod
-    def from_queue_conf(cls, connection_url, queue_conf: RabbitQueueConfig):
+    def from_queue_conf(cls, connection_conf, queue_conf: KafkaQueueConfig):
         return cls(
-            connection_url,
-            name=queue_conf.name,
-            passive=queue_conf.passive,
-            durable=queue_conf.durable,
-            exclusive=queue_conf.exclusive,
-            auto_delete=queue_conf.auto_delete,
+            connection_conf,
+            name=queue_conf.topic,
+            num_partitions = queue_conf.num_partitions,
+            replication_factor = queue_conf.replication_factor,
             arguments=queue_conf.arguments,
         )
 
     def __len__(self):
         """Return the length of the queue"""
-        declared = self.channel.queue_declare(
-            self.name,
-            passive=self.passive,
-            durable=self.durable,
-            exclusive=self.exclusive,
-            auto_delete=self.auto_delete,
-            arguments=self.arguments,
-        )
-        return declared.method.message_count
+        return 1
 
     @_try_operation
-    def pop(self, scheduler, auto_ack=False):
+    def pop(self, scheduler):
         """Pop a message"""
-        method, properties, body = self.channel.basic_get(queue=self.name, auto_ack=auto_ack)
-        if body is None:
+        body = None
+        try:
+            poll_msg = self.consumer.poll(timeout_ms=500, update_offsets=True, max_records=1)
+            for msgs in poll_msg.values():
+                for msg in msgs:
+                    body = msg.value
+                    break
+                break
+        except Exception as e:
+            logger.exception("kafaka queue, pop exception")
             return None
-        request = self._make_request(method, properties, body, scheduler)
-        request.meta["delivery_tag"] = method.delivery_tag
+        if not body:
+            return None
+        request = self._make_request(body, scheduler)
         return request
 
-    def _make_request(self, method, properties, body, scheduler):
+    def _make_request(self, body, scheduler):
         return self._request_from_dict(
-            json.loads(body.decode()), scheduler.spider, method, properties
+            json.loads(body.decode()), scheduler.spider 
         )
 
     @_try_operation
-    def ack(self, delivery_tag):
-        """Ack a message"""
-        self.channel.basic_ack(delivery_tag=delivery_tag)
-
-    @_try_operation
-    def push(self, request, scheduler, headers=None, exchange=""):
+    def push(self, request, scheduler, headers=None, partition=0):
         """Push a message"""
-        body = json.dumps(
+        body: str = json.dumps(
                 keys_string(self._request_to_dict(request, scheduler.spider)),
                 cls=BytesDump,
             )
-        properties = None
-        if headers:
-            properties = pika.BasicProperties(headers=headers)
-        self.channel.basic_publish(
-            exchange=exchange, routing_key=self.name, body=body, properties=properties
-        )
+        logger.debug(f"push message, body: {body}")
+        self.producer.send(self.topic, body.encode(), partition=partition)
 
-    @_try_operation
-    def ack(self, delivery_tag):
-        """Ack a message"""
-        self.channel.basic_ack(delivery_tag=delivery_tag)
 
     def connect(self):
         """Make a connection"""
-        logger.info(f"connect AMQP: {self.connection_url}")
-        if self.connection:
+        logger.info(f"connect kafka: {self.connection_conf}")
+        if self.admin_client:
             try:
-                self.connection.close()
+                self.admin_client.close()
             except:
                 pass
-        self.connection = connection.connect(self.connection_url)
-        self.channel = connection.get_channel(
-            connection=self.connection,
-            queue=self.name,
-            passive=self.passive,
-            durable=self.durable,
-            exclusive=self.exclusive,
-            auto_delete=self.auto_delete,
-            arguments=self.arguments,
-        )
+        self.admin_client = KafkaAdminClient(bootstrap_servers=self.connection_conf)
+        topic_list = []
+        topic_list.append(
+            NewTopic(name=self.topic, 
+                    num_partitions=self.num_partitions, 
+                    replication_factor=self.replication_factor))
+        try:
+            self.admin_client.create_topics(new_topics=topic_list, validate_only=False)
+        except Exception as e:
+            logger.error(e)
+
+        if self.producer:
+            self.producer.close()
+        self.producer = KafkaProducer(bootstrap_servers=self.connection_conf)
+        if self.consumer:
+            self.consumer.close()
+        self.consumer = KafkaConsumer(self.topic, group_id=f"{self.topic}.spider.consumer", bootstrap_servers=self.connection_conf)
 
     def close(self):
         """Close channel"""
         logger.error(f"close AMQP connection")
-        self.channel.close()
+        self.admin_client.close()
+        self.producer.close()
+        self.consumer.close()
 
     def clear(self):
         """Clear queue/stack"""
-        self.channel.queue_purge(self.name)
+        # self.channel.queue_purge(self.name)
 
     @classmethod
-    def _request_from_dict(cls, d, spider=None, method=None, properties=None):
+    def _request_from_dict(cls, d, spider=None):
         """Create Request object from a dict.
 
         If a spider is given, it will try to resolve the callbacks looking at the
@@ -219,7 +211,6 @@ class RabbitQueue(IQueue):
                 new_dict[key] = value
         logger.debug(f"request_to_dict: {d}")
         return new_dict
-
 
 
 __all__ = ["RabbitQueue"]

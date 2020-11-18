@@ -8,7 +8,7 @@ from scrapy_distributed.middlewares.common import is_a_picture
 logger = logging.getLogger(__name__)
 
 
-class RabbitMiddleware(object):
+class KafkaMiddleware(object):
     """ Middleware used to close message from current queue or
         send unsuccessful messages to be rescheduled.
     """
@@ -19,11 +19,11 @@ class RabbitMiddleware(object):
 
     @classmethod
     def from_settings(cls, settings):
-        return RabbitMiddleware(settings)
+        return KafkaMiddleware(settings)
 
     @classmethod
     def from_crawler(cls, crawler):
-        return RabbitMiddleware(crawler.settings)
+        return KafkaMiddleware(crawler.settings)
 
     def ensure_init(self, spider):
         if self.init:
@@ -42,7 +42,7 @@ class RabbitMiddleware(object):
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        spider.logger.debug(f"process_request: {spider.name}: {request.url}, {request.meta.get('delivery_tag', None)}")
+        spider.logger.debug(f"process_request: {spider.name}: {request.url}")
         return None
 
     def process_response(self, request, response, spider):
@@ -51,20 +51,11 @@ class RabbitMiddleware(object):
         if not is_a_picture(response):
             if response.status in self.requeue_list:
                 self.requeue(response)
-                self.ack(request, response)
                 request.meta["requeued"] = True
                 raise IgnoreRequest
-            else:
-                self.ack(request, response)
         else:
             self.process_picture(response)
         return response
-
-    def has_delivery_tag(self, request):
-        if "delivery_tag" not in request.meta:
-            logger.debug("Request %(request)s does not have a deliver tag." % {"request": request})
-            return False
-        return True
 
     def process_picture(self, response):
         logger.debug("Picture (%(status)d): %(url)s", {"url": response.url, "status": response.status})
@@ -75,15 +66,7 @@ class RabbitMiddleware(object):
         logger.debug("Requeued (%(status)d): %(url)s", {"url": response.url, "status": response.status})
         self.inc_stat("requeued")
 
-    def ack(self, request, response):
-        logger.debug(f"ack: {request.meta}")
-        if self.has_delivery_tag(request):
-            delivery_tag = request.meta.get("delivery_tag")
-            self.scheduler.queue.ack(delivery_tag)
-            logger.debug("Acked (%(status)d): %(url)s" % {"url": response.url, "status": response.status})
-            self.inc_stat("acked")
-        else:
-            logger.info(f"don't has_delivery_tag: {request.url}")
-
     def inc_stat(self, stat):
         self.stats.inc_value("scheduler/acking/%(stat)s/distributed-queue" % {"stat": stat}, spider=self.spider)
+
+
