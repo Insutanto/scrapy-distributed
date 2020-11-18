@@ -35,6 +35,7 @@ setup(
     maintainer_email="insutantow@gmail.com",
     license="BSD",
     packages=find_packages(),
+    include_package_data=True,
     zip_safe=False,
     classifiers=[
         "Development Status :: 4 - Beta",
