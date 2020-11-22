@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-from logging import log
-from os import dup
 from urllib.parse import urlparse
 
 from redisbloom.client import Client
@@ -15,10 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class RedisBloomConfig(object):
-    def __init__(self, key, error_rate=0.001, capacity=100_0000, kwargs=None):
+    def __init__(self, key, error_rate=0.001, capacity=100_0000, exclude_url_query_params=None, kwargs=None):
         self.key = key
         self.error_rate = error_rate
         self.capacity = capacity
+        self.exclude_url_query_params = exclude_url_query_params
         self.kwargs = kwargs if kwargs is not None else {}
 
 
@@ -30,6 +29,7 @@ class RedisBloomDupeFilter(BaseDupeFilter):
         dupe_filter_key: str = defaults.SCHEDULER_DUPEFILTER_KEY,
         default_error_rate: float = defaults.DUPEFILTER_ERROR_RATE,
         default_capacity: int = defaults.DUPEFILTER_CAPACITY,
+        default_exclude_url_query_params = defaults.DUPEFILTER_EXCLUDE_URL_QUERY_PARAMS,
         debug: bool = False,
     ):
         self.file = None
@@ -38,6 +38,7 @@ class RedisBloomDupeFilter(BaseDupeFilter):
         self.dupe_filter_key = dupe_filter_key
         self.default_error_rate = default_error_rate
         self.default_capacity = default_capacity
+        self.default_exclude_url_query_params = default_exclude_url_query_params
         self.logdupes = True
         self.debug = debug
         self.config = config
@@ -56,12 +57,16 @@ class RedisBloomDupeFilter(BaseDupeFilter):
         default_capacity = settings.get(
             "BLOOM_DUPEFILTER_CAPACITY", defaults.DUPEFILTER_CAPACITY
         )
+        default_exclude_url_query_params = settings.get(
+            "BLOOM_DUPEFILTER_EXCLUDE_URL_QUERY_PARAMS", defaults.DUPEFILTER_EXCLUDE_URL_QUERY_PARAMS
+        )
         redis_client = get_redis_from_settings(settings)
         return cls(
             redis_client,
             dupe_filter_key=dupe_filter_key,
             default_error_rate=default_error_rate,
             default_capacity=default_capacity,
+            default_exclude_url_query_params=default_exclude_url_query_params,
             debug=debug,
         )
 
@@ -86,7 +91,6 @@ class RedisBloomDupeFilter(BaseDupeFilter):
     def from_spider(cls, spider):
         logger.debug("RedisBloomDupeFilter from_spider")
         settings = spider.settings
-        redis_client = get_redis_from_settings(settings)
         instance = cls.from_settings(settings)
         instance.init_redis_bloom_key(spider)
         return instance
@@ -104,7 +108,10 @@ class RedisBloomDupeFilter(BaseDupeFilter):
 
         """
         result = urlparse(request.url)
-        uri = result.netloc + result.path
+        if self.config.exclude_url_query_params is False or self.default_exclude_url_query_params is False:
+            uri = f"{result.netloc}{result.path}?{result.params}={result.query}"
+        else:
+            uri = result.netloc + result.path
         seen = self.redis_client.bfExists(self.config.key, uri) == 1
         if not seen:
             self.redis_client.bfAdd(self.config.key, uri)

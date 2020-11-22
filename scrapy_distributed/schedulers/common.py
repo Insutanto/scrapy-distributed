@@ -53,7 +53,6 @@ class DistributedQueueScheduler(Scheduler):
         settings = crawler.settings
         rabbit_connection_conf = settings.get("RABBITMQ_CONNECTION_PARAMETERS")
         kafka_connection_conf = settings.get("KAFKA_CONNECTION_PARAMETERS")
-        logger.error(f"kafka_connection_conf：{kafka_connection_conf}")
         custom_connection_conf = settings.get("CUSTOM_CONNECTION_PARAMETERS")
         queue_class = load_object(settings.get("SCHEDULER_QUEUE_CLASS"))
         dupefilter_cls = load_object(settings["DUPEFILTER_CLASS"])

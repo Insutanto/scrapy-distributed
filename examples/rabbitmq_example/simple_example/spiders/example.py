@@ -12,7 +12,8 @@ class RabbitSpider(SitemapSpider):
         arguments={"x-queue-mode": "lazy", "x-max-priority": 255},
     )
     redis_bloom_conf: RedisBloomConfig = RedisBloomConfig(
-        key="example:dupefilter", error_rate=0.001, capacity=100_0000
+        key="example:dupefilter", error_rate=0.001, capacity=100_0000,
+        exclude_url_query_params=False
     )
 
     def parse(self, response):
