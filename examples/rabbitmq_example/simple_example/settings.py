@@ -22,6 +22,10 @@ REDIS_BLOOM_PARAMS = {"redis_cls": "redisbloom.client.Client"}
 BLOOM_DUPEFILTER_ERROR_RATE = 0.001
 BLOOM_DUPEFILTER_CAPACITY = 100_0000
 
+# REDIRECT_ENABLED = False
+# SCHEDULER_REQUEUE_ON_STATUS = ["302"]
+# METAREFRESH_IGNORE_TAGS = ["delivery_tag"]
+
 LOG_LEVEL = "INFO"
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'simple_example (+http://www.yourdomain.com)'
@@ -61,7 +65,7 @@ ROBOTSTXT_OBEY = False
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
+    "scrapy.downloadermiddlewares.redirect.RedirectMiddleware": None,
     "simple_example.middlewares.SimpleExampleDownloaderMiddleware": 540,
     "scrapy_distributed.middlewares.amqp.RabbitMiddleware": 542
 }

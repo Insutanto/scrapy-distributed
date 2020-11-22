@@ -130,11 +130,6 @@ class RabbitQueue(IQueue):
         )
 
     @_try_operation
-    def ack(self, delivery_tag):
-        """Ack a message"""
-        self.channel.basic_ack(delivery_tag=delivery_tag)
-
-    @_try_operation
     def push(self, request, scheduler, headers=None, exchange=""):
         """Push a message"""
         body = json.dumps(

@@ -3,17 +3,18 @@
 import logging
 
 from scrapy.exceptions import IgnoreRequest
+from scrapy.http.request import Request
 from scrapy_distributed.middlewares.common import is_a_picture
+from scrapy.downloadermiddlewares.redirect import RedirectMiddleware
 
-logger = logging.getLogger(__name__)
 
-
-class RabbitMiddleware(object):
+class RabbitMiddleware(RedirectMiddleware):
     """ Middleware used to close message from current queue or
         send unsuccessful messages to be rescheduled.
     """
 
     def __init__(self, settings):
+        super().__init__(settings)
         self.requeue_list = settings.get("SCHEDULER_REQUEUE_ON_STATUS", [])
         self.init = True
 
@@ -46,8 +47,12 @@ class RabbitMiddleware(object):
         return None
 
     def process_response(self, request, response, spider):
-        spider.logger.debug(f"process_response: {spider.name}: {response.url}")
         self.ensure_init(spider)
+        spider.logger.debug(f"process_response: {spider.name}: {response.url}")
+        redirect_result = super().process_response(request, response, spider)
+        if isinstance(redirect_result, Request):
+            self.ack(request, response)
+            return redirect_result
         if not is_a_picture(response):
             if response.status in self.requeue_list:
                 self.requeue(response)
@@ -62,28 +67,28 @@ class RabbitMiddleware(object):
 
     def has_delivery_tag(self, request):
         if "delivery_tag" not in request.meta:
-            logger.debug("Request %(request)s does not have a deliver tag." % {"request": request})
+            self.spider.logger.debug("Request %(request)s does not have a deliver tag." % {"request": request})
             return False
         return True
 
     def process_picture(self, response):
-        logger.debug("Picture (%(status)d): %(url)s", {"url": response.url, "status": response.status})
+        self.spider.logger.debug("Picture (%(status)d): %(url)s", {"url": response.url, "status": response.status})
         self.inc_stat("picture")
 
     def requeue(self, response):
         self.scheduler.requeue_message(response.url)
-        logger.debug("Requeued (%(status)d): %(url)s", {"url": response.url, "status": response.status})
+        self.spider.logger.debug("Requeued (%(status)d): %(url)s", {"url": response.url, "status": response.status})
         self.inc_stat("requeued")
 
     def ack(self, request, response):
-        logger.debug(f"ack: {request.meta}")
+        self.spider.logger.debug(f"ack Request({request}): {request.meta}")
         if self.has_delivery_tag(request):
             delivery_tag = request.meta.get("delivery_tag")
             self.scheduler.queue.ack(delivery_tag)
-            logger.debug("Acked (%(status)d): %(url)s" % {"url": response.url, "status": response.status})
+            self.spider.logger.debug("Acked (%(status)d): %(url)s" % {"url": response.url, "status": response.status})
             self.inc_stat("acked")
         else:
-            logger.info(f"don't has_delivery_tag: {request.url}")
+            self.spider.logger.info(f"don't has_delivery_tag: {request.url}")
 
     def inc_stat(self, stat):
         self.stats.inc_value("scheduler/acking/%(stat)s/distributed-queue" % {"stat": stat}, spider=self.spider)
