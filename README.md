@@ -67,6 +67,20 @@ REDIS_BLOOM_PARAMS = {
 BLOOM_DUPEFILTER_ERROR_RATE = 0.001
 BLOOM_DUPEFILTER_CAPACITY = 100_0000
 
+# disable the RedirectMiddleware, because the RabbitMiddleware can handle those redirect request.
+DOWNLOADER_MIDDLEWARES = {
+    ...
+    "scrapy.downloadermiddlewares.redirect.RedirectMiddleware": None,
+    "scrapy_distributed.middlewares.amqp.RabbitMiddleware": 542
+}
+
+# add RabbitPipeline, it will push your items to rabbitmq's queue. 
+ITEM_PIPELINES = {
+    ...
+   'scrapy_distributed.pipelines.amqp.RabbitPipeline': 301,
+}
+
+
 ```
 
 ### **Step 2:**
@@ -91,6 +105,12 @@ REDIS_BLOOM_PARAMS = {
 }
 BLOOM_DUPEFILTER_ERROR_RATE = 0.001
 BLOOM_DUPEFILTER_CAPACITY = 100_0000
+
+DOWNLOADER_MIDDLEWARES = {
+    ...
+   "scrapy_distributed.middlewares.kafka.KafkaMiddleware": 542
+}
+
 ```
 
 ### **Step 2:**
@@ -101,7 +121,7 @@ scrapy crawl <your_spider>
 
 ## **TODO**
 
-- RabbitMQ Item Pipeline
+- ~~RabbitMQ Item Pipeline~~
 - Support Delayed Message in RabbitMQ Scheduler
 - Support Scheduler Serializer
 - Custom Interface for DupeFilter
