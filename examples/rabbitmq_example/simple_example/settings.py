@@ -78,9 +78,10 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'simple_example.pipelines.SimpleExamplePipeline': 300,
-# }
+ITEM_PIPELINES = {
+   'simple_example.pipelines.SimpleExamplePipeline': 300,
+   'scrapy_distributed.pipelines.amqp.RabbitPipeline': 301,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

@@ -58,12 +58,12 @@ class KafkaMiddleware(object):
         return response
 
     def process_picture(self, response):
-        logger.debug("Picture (%(status)d): %(url)s", {"url": response.url, "status": response.status})
+        self.spider.debug("Picture (%(status)d): %(url)s", {"url": response.url, "status": response.status})
         self.inc_stat("picture")
 
     def requeue(self, response):
         self.scheduler.requeue_message(response.url)
-        logger.debug("Requeued (%(status)d): %(url)s", {"url": response.url, "status": response.status})
+        self.spider.debug("Requeued (%(status)d): %(url)s", {"url": response.url, "status": response.status})
         self.inc_stat("requeued")
 
     def inc_stat(self, stat):

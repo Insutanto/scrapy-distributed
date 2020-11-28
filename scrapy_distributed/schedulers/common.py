@@ -8,8 +8,9 @@ from scrapy.utils.job import job_dir
 from scrapy.utils.misc import create_instance, load_object
 from queuelib import PriorityQueue
 import warnings
-from scrapy_distributed.queues.kafka import KafkaQueueConfig, KafkaQueue
-from scrapy_distributed.queues.amqp import RabbitQueueConfig, RabbitQueue
+from scrapy_distributed.queues.kafka import KafkaQueue
+from scrapy_distributed.queues.amqp import RabbitQueue
+from scrapy_distributed.common.queue_config import RabbitQueueConfig, KafkaQueueConfig
 from scrapy.utils.deprecate import ScrapyDeprecationWarning
 
 logger = logging.getLogger(__name__)

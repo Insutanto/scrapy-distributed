@@ -15,26 +15,9 @@ import time
 import pika
 
 from scrapy_distributed.amqp_utils import connection
+from scrapy_distributed.common.queue_config import RabbitQueueConfig
 
 logger = logging.getLogger(__name__)
-
-
-class RabbitQueueConfig(object):
-    def __init__(
-        self,
-        name,
-        passive=False,
-        durable=False,
-        exclusive=False,
-        auto_delete=False,
-        arguments=None,
-    ):
-        self.name = name
-        self.passive = passive
-        self.durable = durable
-        self.exclusive = exclusive
-        self.auto_delete = auto_delete
-        self.arguments = arguments
 
 
 def _try_operation(function):

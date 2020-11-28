@@ -4,7 +4,6 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-from logging import log
 from scrapy.http.request import Request
 from scrapy.utils.misc import load_object
 
@@ -16,24 +15,11 @@ from kafka.admin import KafkaAdminClient, NewTopic
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
 from scrapy_distributed.queues import IQueue
+from scrapy_distributed.common.queue_config import KafkaQueueConfig
 import time
 
 
 logger = logging.getLogger(__name__)
-
-
-class KafkaQueueConfig(object):
-    def __init__(
-        self,
-        topic,
-        num_partitions=10,
-        replication_factor=3,
-        arguments=None,
-    ):
-        self.topic = topic
-        self.num_partitions = num_partitions
-        self.replication_factor = replication_factor
-        self.arguments = arguments
 
 
 def _try_operation(function):
