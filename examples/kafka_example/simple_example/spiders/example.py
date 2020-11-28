@@ -1,5 +1,4 @@
-from pyasn1.type.base import SimpleAsn1Type
-from scrapy_distributed.queues.kafka import KafkaQueueConfig
+from scrapy_distributed.common.queue_config import KafkaQueueConfig
 from scrapy_distributed.dupefilters.redis_bloom import RedisBloomConfig
 from scrapy_distributed.spiders.sitemap import SitemapSpider
 

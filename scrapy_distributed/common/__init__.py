@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["common", "amqp", "kafka"]
+__all__ = ["queue_config"]
