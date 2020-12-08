@@ -11,6 +11,7 @@ class RabbitSpider(SitemapSpider):
         name="example",
         durable=True,
         arguments={"x-queue-mode": "lazy", "x-max-priority": 255},
+        properties={"delivery_mode": 2}
     )
     item_conf: RabbitQueueConfig = RabbitQueueConfig(
         name="example:items:new",

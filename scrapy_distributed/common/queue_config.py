@@ -9,6 +9,7 @@ class RabbitQueueConfig(object):
         exclusive=False,
         auto_delete=False,
         arguments=None,
+        properties=None
     ):
         self.name = name
         self.passive = passive
@@ -16,6 +17,7 @@ class RabbitQueueConfig(object):
         self.exclusive = exclusive
         self.auto_delete = auto_delete
         self.arguments = arguments
+        self.properties = properties
 
 
 class KafkaQueueConfig(object):

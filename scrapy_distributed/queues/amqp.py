@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+from typing import Dict
 
 from scrapy.http.request import Request
 from scrapy_distributed.queues.common import BytesDump, keys_string
@@ -48,13 +49,14 @@ class RabbitQueue(IQueue):
 
     def __init__(
         self,
-        connection_url,
-        name,
+        connection_url: str,
+        name: str,
         passive=False,
         durable=False,
         exclusive=False,
         auto_delete=False,
         arguments=None,
+        properties=None
     ):
         """Initialize per-spider RabbitMQ queue.
 
@@ -69,6 +71,7 @@ class RabbitQueue(IQueue):
         self.exclusive = exclusive
         self.auto_delete = auto_delete
         self.arguments = arguments
+        self.properties = properties
         self.connection = None
         self.channel = None
         self.connect()
@@ -83,6 +86,7 @@ class RabbitQueue(IQueue):
             exclusive=queue_conf.exclusive,
             auto_delete=queue_conf.auto_delete,
             arguments=queue_conf.arguments,
+            properties = queue_conf.properties
         )
 
     def __len__(self):
@@ -93,7 +97,7 @@ class RabbitQueue(IQueue):
             durable=self.durable,
             exclusive=self.exclusive,
             auto_delete=self.auto_delete,
-            arguments=self.arguments,
+            arguments=self.arguments
         )
         return declared.method.message_count
 
@@ -119,9 +123,12 @@ class RabbitQueue(IQueue):
                 keys_string(self._request_to_dict(request, scheduler.spider)),
                 cls=BytesDump,
             )
-        properties = None
         if headers:
-            properties = pika.BasicProperties(headers=headers)
+            properties = pika.BasicProperties(
+                headers=headers, 
+                delivery_mode=self.properties.get("delivery_mode", 1))
+        else:
+            properties = pika.BasicProperties(delivery_mode=self.properties.get("delivery_mode", 1))
         self.channel.basic_publish(
             exchange=exchange, routing_key=self.name, body=body, properties=properties
         )
