@@ -150,7 +150,7 @@ class KafkaQueue(IQueue):
 
     def close(self):
         """Close channel"""
-        logger.error(f"close AMQP connection")
+        logger.error(f"close Kafka connection")
         self.admin_client.close()
         self.producer.close()
         self.consumer.close()

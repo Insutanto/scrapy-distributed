@@ -20,7 +20,7 @@ def read_rst(filename):
 
 setup(
     name="Scrapy-Distributed",
-    version="2020.11.3",
+    version="2020.12.1",
     url="https://github.com/Insutanto/scrapy-distributed",
     project_urls={
         "Documentation": "https://github.com/Insutanto/scrapy-distributed",

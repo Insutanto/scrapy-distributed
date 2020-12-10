@@ -24,9 +24,12 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - Redis >= 3.0.1
 - kafka-python >= 1.4.7
 
-## **Usage**
+## **Usage**    
 
-There is a simple demo in `examples/simple_example`. Here is the fast way to use `Scrapy-Distributed`.
+There is a simple demo in [`examples/simple_example`]((examples/)). Here is the fast way to use `Scrapy-Distributed`.
+
+1. [Examples of RabbitMQ](examples/rabbitmq_example)
+1. [Examples of Kafka](examples/kafka_example)
 
 ### **Step 0:**
 
@@ -130,7 +133,7 @@ scrapy crawl <your_spider>
 - RocketMQ Scheduler
 - RocketMQ Item Pipeline
 - ~~Kafka Scheduler~~
-- Kafka Item Pipeline
+- ~~Kafka Item Pipeline~~
 
 ## **Reference Project**
 
