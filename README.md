@@ -24,12 +24,52 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - Redis >= 3.0.1
 - kafka-python >= 1.4.7
 
-## **Usage**    
+## **TODO**
+
+- ~~RabbitMQ Item Pipeline~~
+- Support Delayed Message in RabbitMQ Scheduler
+- Support Scheduler Serializer
+- Custom Interface for DupeFilter
+- RocketMQ Scheduler
+- RocketMQ Item Pipeline
+- SQLAlchemy Item Pipeline
+- Mongodb Item Pipeline
+- ~~Kafka Scheduler~~
+- ~~Kafka Item Pipeline~~
+
+## **Usage**
 
 There is a simple demo in [`examples/simple_example`]((examples/)). Here is the fast way to use `Scrapy-Distributed`.
 
-1. [Examples of RabbitMQ](examples/rabbitmq_example)
-1. [Examples of Kafka](examples/kafka_example)
+### [Examples of RabbitMQ](examples/rabbitmq_example)
+
+```bash
+# pull and run a RabbitMQ container.
+docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3
+# enable rabbitmq_management
+docker exec -it <rabbitmq-container-id> /bin/bash
+cd /etc/rabbitmq/
+rabbitmq-plugins enable rabbitmq_management
+
+# pull and run a RedisBloom container.
+docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
+
+cd examples/rabbitmq_example
+python run_simple_example.py
+
+```
+
+### [Examples of Kafka](examples/kafka_example)
+
+```bash
+# make sure you have a Kafka running on localhost:9092
+# pull and run a RedisBloom container.
+docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
+
+cd examples/kafka_example
+python run_simple_example.py
+
+```
 
 ### **Step 0:**
 
@@ -50,6 +90,10 @@ If you don't have the required environment for tests:
 ```bash
 # pull and run a RabbitMQ container.
 docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3
+# enable rabbitmq_management
+docker exec -it <rabbitmq-container-id> /bin/bash
+cd /etc/rabbitmq/
+rabbitmq-plugins enable rabbitmq_management
 # pull and run a RedisBloom container.
 docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
 ```
@@ -123,17 +167,6 @@ DOWNLOADER_MIDDLEWARES = {
 ```
 scrapy crawl <your_spider>
 ```
-
-## **TODO**
-
-- ~~RabbitMQ Item Pipeline~~
-- Support Delayed Message in RabbitMQ Scheduler
-- Support Scheduler Serializer
-- Custom Interface for DupeFilter
-- RocketMQ Scheduler
-- RocketMQ Item Pipeline
-- ~~Kafka Scheduler~~
-- ~~Kafka Item Pipeline~~
 
 ## **Reference Project**
 
