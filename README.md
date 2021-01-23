@@ -39,6 +39,19 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 
 ## **Usage**
 
+### **Step 0:**
+
+```
+pip install scrapy-distributed
+```
+
+OR
+
+```
+git clone https://github.com/Insutanto/scrapy-distributed.git && cd scrapy-distributed
+&& python setup.py install
+```
+
 There is a simple demo in [`examples/simple_example`]((examples/)). Here is the fast way to use `Scrapy-Distributed`.
 
 ### [Examples of RabbitMQ](examples/rabbitmq_example)
@@ -71,18 +84,6 @@ python run_simple_example.py
 
 ```
 
-### **Step 0:**
-
-```
-pip install scrapy-distributed
-```
-
-OR
-
-```
-git clone https://github.com/Insutanto/scrapy-distributed.git && cd scrapy-distributed
-&& python setup.py install
-```
 ## RabbitMQ Support
 
 If you don't have the required environment for tests:
