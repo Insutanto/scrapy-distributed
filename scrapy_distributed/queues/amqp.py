@@ -193,6 +193,7 @@ class RabbitQueue(IQueue):
             priority=d.get("priority", 0),
             dont_filter=d.get("dont_filter", True),
             flags=d.get("flags", None),
+            cb_kwargs=d.get('cb_kwargs', None),
         )
 
     @classmethod
