@@ -1,5 +1,4 @@
 from scrapy.http.request import Request
-from scrapy.selector.unified import Selector
 from scrapy.spiders import Spider
 from examples.rabbitmq_example.simple_example.items import CommonExampleItem, SimpleExampleItem
 from scrapy_distributed.spiders.sitemap import SitemapSpider

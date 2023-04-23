@@ -1,4 +1,3 @@
-from scrapy.http import request
 from examples.kafka_example.simple_example.items import SimpleExampleItem
 from scrapy_distributed.common.queue_config import KafkaQueueConfig
 from scrapy_distributed.dupefilters.redis_bloom import RedisBloomConfig

@@ -56,32 +56,46 @@ There is a simple demo in [`examples/simple_example`]((examples/)). Here is the
 
 ### [Examples of RabbitMQ](examples/rabbitmq_example)
 
+If you don't have the required environment for tests:
+
 ```bash
 # pull and run a RabbitMQ container.
-docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3
-# enable rabbitmq_management
-docker exec -it <rabbitmq-container-id> /bin/bash
-cd /etc/rabbitmq/
-rabbitmq-plugins enable rabbitmq_management
+docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3-management
 
 # pull and run a RedisBloom container.
-docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
+docker run -d --name redisbloom -p 6379:6379 redis/redis-stack
 
 cd examples/rabbitmq_example
 python run_simple_example.py
+```
 
+Or you can use docker compose:
+
+```bash
+docker compose -f ./docker-compose.dev.yaml up -d
+cd examples/rabbitmq_example
+python run_simple_example.py
 ```
 
 ### [Examples of Kafka](examples/kafka_example)
 
+If you don't have the required environment for tests:
+
 ```bash
 # make sure you have a Kafka running on localhost:9092
 # pull and run a RedisBloom container.
-docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
+docker run -d --name redisbloom -p 6379:6379 redis/redis-stack
 
 cd examples/kafka_example
 python run_simple_example.py
+```
 
+Or you can use docker compose:
+
+```bash
+docker compose -f ./docker-compose.dev.yaml up -d
+cd examples/kafka_example
+python run_simple_example.py
 ```
 
 ## RabbitMQ Support
@@ -90,13 +104,16 @@ If you don't have the required environment for tests:
 
 ```bash
 # pull and run a RabbitMQ container.
-docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3
-# enable rabbitmq_management
-docker exec -it <rabbitmq-container-id> /bin/bash
-cd /etc/rabbitmq/
-rabbitmq-plugins enable rabbitmq_management
+docker run -d --name rabbitmq -p 0.0.0.0:15672:15672 -p 0.0.0.0:5672:5672 rabbitmq:3-management
+
 # pull and run a RedisBloom container.
-docker run -d --name redis-redisbloom -p 6379:6379 redislabs/rebloom:latest
+docker run -d --name redisbloom -p 6379:6379 redis/redis-stack
+```
+
+Or you can use docker compose:
+
+```bash
+docker compose -f ./docker-compose.dev.yaml up -d
 ```
 
 ### **Step 1:**
