@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 import json
 import logging
 from scrapy.http.request import Request
 from scrapy.utils.misc import load_object
 
-from scrapy.utils.reqser import _get_method, request_to_dict
+from scrapy.utils.reqser import request_to_dict
 from w3lib.util import to_unicode
-from scrapy_distributed.queues.common import BytesDump, keys_string
+from scrapy_distributed.queues.common import BytesDump, keys_string, get_method
 
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka import KafkaProducer
@@ -78,8 +77,8 @@ class KafkaQueue(IQueue):
         return cls(
             connection_conf,
             name=queue_conf.topic,
-            num_partitions = queue_conf.num_partitions,
-            replication_factor = queue_conf.replication_factor,
+            num_partitions=queue_conf.num_partitions,
+            replication_factor=queue_conf.replication_factor,
             arguments=queue_conf.arguments,
         )
 
@@ -108,19 +107,18 @@ class KafkaQueue(IQueue):
 
     def _make_request(self, body, scheduler):
         return self._request_from_dict(
-            json.loads(body.decode()), scheduler.spider 
+            json.loads(body.decode()), scheduler.spider
         )
 
     @_try_operation
     def push(self, request, scheduler, headers=None, partition=0):
         """Push a message"""
         body: str = json.dumps(
-                keys_string(self._request_to_dict(request, scheduler.spider)),
-                cls=BytesDump,
-            )
+            keys_string(self._request_to_dict(request, scheduler.spider)),
+            cls=BytesDump,
+        )
         logger.debug(f"push message, body: {body}")
         self.producer.send(self.topic, body.encode(), partition=partition)
-
 
     def connect(self):
         """Make a connection"""
@@ -131,11 +129,9 @@ class KafkaQueue(IQueue):
             except:
                 pass
         self.admin_client = KafkaAdminClient(bootstrap_servers=self.connection_conf)
-        topic_list = []
-        topic_list.append(
-            NewTopic(name=self.topic, 
-                    num_partitions=self.num_partitions, 
-                    replication_factor=self.replication_factor))
+        topic_list = [NewTopic(name=self.topic,
+                               num_partitions=self.num_partitions,
+                               replication_factor=self.replication_factor)]
         try:
             self.admin_client.create_topics(new_topics=topic_list, validate_only=False)
         except Exception as e:
@@ -146,7 +142,8 @@ class KafkaQueue(IQueue):
         self.producer = KafkaProducer(bootstrap_servers=self.connection_conf)
         if self.consumer:
             self.consumer.close()
-        self.consumer = KafkaConsumer(self.topic, group_id=f"{self.topic}.spider.consumer", bootstrap_servers=self.connection_conf)
+        self.consumer = KafkaConsumer(self.topic, group_id=f"{self.topic}.spider.consumer",
+                                      bootstrap_servers=self.connection_conf)
 
     def close(self):
         """Close channel"""
@@ -168,10 +165,10 @@ class KafkaQueue(IQueue):
         """
         cb = d.get("callback", None)
         if cb and spider:
-            cb = _get_method(spider, cb)
+            cb = get_method(spider, cb)
         eb = d.get("errback", None)
         if eb and spider:
-            eb = _get_method(spider, eb)
+            eb = get_method(spider, eb)
         request_cls = load_object(d.get("_class", None)) if "_class" in d else Request
         return request_cls(
             url=to_unicode(d.get("url", None)),
@@ -182,7 +179,7 @@ class KafkaQueue(IQueue):
             body=d.get("body", None),
             cookies=d.get("cookies", None),
             meta=d.get("meta", None),
-            encoding=d.get("_encoding", None),
+            encoding=d.get("_encoding", "utf-8"),
             priority=d.get("priority", 0),
             dont_filter=d.get("dont_filter", True),
             flags=d.get("flags", None),
@@ -199,4 +196,4 @@ class KafkaQueue(IQueue):
         return new_dict
 
 
-__all__ = ["RabbitQueue"]
+__all__ = ["KafkaQueue"]

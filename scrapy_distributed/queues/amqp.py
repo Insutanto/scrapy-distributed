@@ -5,10 +5,10 @@ import logging
 from typing import Dict
 
 from scrapy.http.request import Request
-from scrapy_distributed.queues.common import BytesDump, keys_string
+from scrapy_distributed.queues.common import BytesDump, keys_string, get_method
 from scrapy.utils.misc import load_object
 
-from scrapy.utils.reqser import _get_method, request_to_dict
+from scrapy.utils.reqser import request_to_dict
 from w3lib.util import to_unicode
 from scrapy_distributed.queues import IQueue
 import time
@@ -175,10 +175,10 @@ class RabbitQueue(IQueue):
         """
         cb = d.get("callback", None)
         if cb and spider:
-            cb = _get_method(spider, cb)
+            cb = get_method(spider, cb)
         eb = d.get("errback", None)
         if eb and spider:
-            eb = _get_method(spider, eb)
+            eb = get_method(spider, eb)
         request_cls = load_object(d.get("_class", None)) if "_class" in d else Request
         return request_cls(
             url=to_unicode(d.get("url", None)),
@@ -189,7 +189,7 @@ class RabbitQueue(IQueue):
             body=d.get("body", None),
             cookies=d.get("cookies", None),
             meta=d.get("meta", None),
-            encoding=d.get("_encoding", None),
+            encoding=d.get("_encoding", "utf-8"),
             priority=d.get("priority", 0),
             dont_filter=d.get("dont_filter", True),
             flags=d.get("flags", None),
@@ -205,7 +205,6 @@ class RabbitQueue(IQueue):
                 new_dict[key] = value
         logger.debug(f"request_to_dict: {d}")
         return new_dict
-
 
 
 __all__ = ["RabbitQueue"]

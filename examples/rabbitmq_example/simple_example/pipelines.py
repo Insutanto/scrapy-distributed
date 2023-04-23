@@ -6,9 +6,7 @@
 
 # useful for handling different item types with a single interface
 import os
-from examples.rabbitmq_example.simple_example.items import CommonExampleItem
-from itemadapter import ItemAdapter
-import json
+from simple_example.items import CommonExampleItem
 
 
 class SimpleExamplePipeline:
