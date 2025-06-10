@@ -52,7 +52,7 @@ git clone https://github.com/Insutanto/scrapy-distributed.git && cd scrapy-distr
 && python setup.py install
 ```
 
-There is a simple demo in [`examples/simple_example`]((examples/)). Here is the fast way to use `Scrapy-Distributed`.
+There are example projects in `examples/rabbitmq_example` and `examples/kafka_example`. Here is the fast way to use `Scrapy-Distributed`.
 
 ### [Examples of RabbitMQ](examples/rabbitmq_example)
 
