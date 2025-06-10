@@ -74,7 +74,14 @@ class KafkaPipeline(object):
 
     def close(self):
         """Close channel"""
-        self.admin_client.close()
-        self.producer.close()
-        self.consumer.close()
+        if self.admin_client:
+            try:
+                self.admin_client.close()
+            except Exception:
+                pass
+        if self.producer:
+            try:
+                self.producer.close()
+            except Exception:
+                pass
         logger.error("kafka pipeline channel is closed")
