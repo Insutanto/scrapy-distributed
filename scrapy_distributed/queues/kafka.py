@@ -26,11 +26,13 @@ def _try_operation(function):
 
     def wrapper(self, *args, **kwargs):
         retries = 0
+        last_exception = None
         while retries < 10:
             try:
                 return function(self, *args, **kwargs)
             except Exception as e:
                 retries += 1
+                last_exception = e
                 msg = "Function %s failed. Reconnecting... (%d times)" % (
                     str(function),
                     retries,
@@ -38,7 +40,8 @@ def _try_operation(function):
                 logger.error(msg)
                 self.connect()
                 time.sleep((retries - 1) * 5)
-                raise e
+        if last_exception:
+            raise last_exception
         return None
 
     return wrapper
