@@ -10,7 +10,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
     - Support custom declare a RabbitMQ's Queue. Such as `passive`, `durable`, `exclusive`, `auto_delete`, and all other options.
 - RabbitMQ Pipeline
     - Support custom declare a RabbitMQ's Queue for the items of spider. Such as `passive`, `durable`, `exclusive`, `auto_delete`, and all other options.
-- Kafaka Scheduler
+- Kafka Scheduler
     - Support custom declare a Kafka's Topic. Such as `num_partitions`, `replication_factor` and will support other options.
 - RedisBloom DupeFilter
     - Support custom the `key`, `errorRate`, `capacity`, `expansion` and auto-scaling(`noScale`) of a bloom filter.
