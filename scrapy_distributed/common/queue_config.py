@@ -32,3 +32,12 @@ class KafkaQueueConfig(object):
         self.num_partitions = num_partitions
         self.replication_factor = replication_factor
         self.arguments = arguments
+
+
+class RocketMQQueueConfig(object):
+    def __init__(self, topic, group="default", tags=None, keys=None, arguments=None):
+        self.topic = topic
+        self.group = group
+        self.tags = tags
+        self.keys = keys
+        self.arguments = arguments

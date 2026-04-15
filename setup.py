@@ -59,6 +59,7 @@ setup(
         "pika>=1.0.0",
         "redisbloom>=0.2.0",
         "redis>=3.0.1",
-        "kafka-python>=1.4.7"
+        "kafka-python>=1.4.7",
+        "rocketmq-client-python>=2.0.0"
     ],
 )
