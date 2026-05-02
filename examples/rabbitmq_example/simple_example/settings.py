@@ -79,9 +79,14 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'simple_example.pipelines.SimpleExamplePipeline': 300,
-   'scrapy_distributed.pipelines.amqp.RabbitPipeline': 301,
+   'simple_example.pipelines.SimpleExamplePipeline': 201,
+   'scrapy_distributed.pipelines.amqp.RabbitPipeline': 200,
+   'simple_example.pipelines.ImagePipeline': 202,
+   'simple_example.pipelines.MyFilesPipeline': 203,
 }
+
+FILES_STORE = './test_data/example_common/files_dir'
+IMAGES_STORE = './test_data/example_common/images_dir'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
