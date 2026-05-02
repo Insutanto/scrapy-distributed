@@ -34,5 +34,11 @@ class DupeFilterSchedulerMixin(object):
         spider : scrapy.Spider
         """
         logger.debug("DupeFilterSchedulerMixin, init_dupefilter")
-        dupefilter_cls = load_object(spider.settings["DUPEFILTER_CLASS"])
+        dupefilter_class_path = spider.settings.get("DUPEFILTER_CLASS")
+        if not dupefilter_class_path:
+            raise KeyError(
+                "DUPEFILTER_CLASS is not set. "
+                "Add 'DUPEFILTER_CLASS = \"<your.DupeFilter>\"' to your Scrapy settings."
+            )
+        dupefilter_cls = load_object(dupefilter_class_path)
         self.df = dupefilter_cls.from_spider(spider)

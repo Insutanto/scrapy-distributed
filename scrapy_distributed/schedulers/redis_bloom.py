@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class RedisBloomSchedulerMixin(DupeFilterSchedulerMixin):
     """Scheduler mixin for RedisBloom-based DupeFilters.
 
-    .. deprecated::
+    .. deprecated:: 0.1.0
         Use :class:`~scrapy_distributed.schedulers.common_dupefilter.DupeFilterSchedulerMixin`
         directly instead.  This class is kept for backward compatibility and
         simply exposes ``init_redis_bloom`` as an alias for
