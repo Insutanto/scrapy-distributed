@@ -5,7 +5,7 @@ import time
 
 from scrapy.core.scheduler import Scheduler
 from scrapy.utils.job import job_dir
-from scrapy.utils.misc import create_instance, load_object
+from scrapy.utils.misc import build_from_crawler, load_object
 from queuelib import PriorityQueue
 import warnings
 from scrapy_distributed.queues.kafka import KafkaQueue
@@ -57,7 +57,7 @@ class DistributedQueueScheduler(Scheduler):
         custom_connection_conf = settings.get("CUSTOM_CONNECTION_PARAMETERS")
         queue_class = load_object(settings.get("SCHEDULER_QUEUE_CLASS"))
         dupefilter_cls = load_object(settings["DUPEFILTER_CLASS"])
-        dupefilter = create_instance(dupefilter_cls, settings, crawler)
+        dupefilter = build_from_crawler(dupefilter_cls, crawler)
         pqclass = load_object(settings["SCHEDULER_PRIORITY_QUEUE"])
         if pqclass is PriorityQueue:
             warnings.warn(

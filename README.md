@@ -14,6 +14,8 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
     - Support custom declare a Kafka's Topic. Such as `num_partitions`, `replication_factor` and will support other options.
 - RedisBloom DupeFilter
     - Support custom the `key`, `errorRate`, `capacity`, `expansion` and auto-scaling(`noScale`) of a bloom filter.
+- Custom DupeFilter Interface
+    - Implement your own deduplication logic by extending `BaseDupeFilter`.
 
 ## **Requirements**
 
@@ -29,7 +31,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - ~~RabbitMQ Item Pipeline~~
 - Support Delayed Message in RabbitMQ Scheduler
 - Support Scheduler Serializer
-- Custom Interface for DupeFilter
+- ~~Custom Interface for DupeFilter~~
 - RocketMQ Scheduler
 - RocketMQ Item Pipeline
 - SQLAlchemy Item Pipeline
@@ -185,6 +187,51 @@ DOWNLOADER_MIDDLEWARES = {
 ```
 scrapy crawl <your_spider>
 ```
+
+
+## Custom DupeFilter
+
+You can implement your own deduplication logic by extending
+`scrapy_distributed.dupefilters.BaseDupeFilter`.
+
+### **Step 1: Implement `BaseDupeFilter`**
+
+```python
+from scrapy_distributed.dupefilters import BaseDupeFilter
+
+
+class MyDupeFilter(BaseDupeFilter):
+
+    @classmethod
+    def from_settings(cls, settings):
+        return cls()
+
+    @classmethod
+    def from_spider(cls, spider):
+        instance = cls.from_settings(spider.settings)
+        # read spider-specific config, e.g. spider.dupefilter_conf
+        return instance
+
+    def request_seen(self, request):
+        # return True if the request was already seen
+        ...
+
+    def open(self, spider=None):
+        pass
+
+    def close(self, reason=""):
+        pass
+```
+
+### **Step 2: Register the filter in settings**
+
+```python
+SCHEDULER = "scrapy_distributed.schedulers.DistributedScheduler"
+DUPEFILTER_CLASS = "myproject.dupefilters.MyDupeFilter"
+```
+
+The `DistributedScheduler` will call `MyDupeFilter.from_spider(spider)` during
+startup so that the filter can read any spider-level configuration it needs.
 
 ## **Reference Project**
 
