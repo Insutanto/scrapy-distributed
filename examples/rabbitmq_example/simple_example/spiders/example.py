@@ -65,4 +65,17 @@ class RabbitCommonSpider(Spider):
         item['url'] = response.url
         item['title'] = response.xpath("//title/text()").extract_first()
         item["content"] = response.text
+
+        image_urls = []
+        for image_url in response.xpath('//a/img/@src').extract():
+            if image_url.endswith(('jpg', 'png')):
+                image_urls.append(response.urljoin(image_url))
+        item['image_urls'] = image_urls
+
+        file_urls = []
+        for file_url in response.xpath(
+                "//a[re:match(@href,'.*(\\.docx|\\.doc|\\.xlsx|\\.pdf|\\.xls|\\.zip)$')]/@href").extract():
+            file_urls.append(response.urljoin(file_url))
+        item['file_urls'] = file_urls
+
         yield item
