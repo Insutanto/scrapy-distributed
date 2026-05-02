@@ -4,8 +4,8 @@ import logging
 from urllib.parse import urlparse
 
 from redisbloom.client import Client
-from scrapy.dupefilters import BaseDupeFilter
 
+from scrapy_distributed.dupefilters.base import BaseDupeFilter
 from scrapy_distributed.redis_utils import defaults
 from scrapy_distributed.redis_utils.connection import get_redis_from_settings
 
