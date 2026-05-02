@@ -16,6 +16,8 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
     - Support custom the `key`, `errorRate`, `capacity`, `expansion` and auto-scaling(`noScale`) of a bloom filter.
 - Custom DupeFilter Interface
     - Implement your own deduplication logic by extending `BaseDupeFilter`.
+- SQLAlchemy Pipeline
+    - Persist scraped items to any relational database supported by SQLAlchemy (SQLite, PostgreSQL, MySQL, etc.).  The table schema is inferred automatically from item fields.
 
 ## **Requirements**
 
@@ -25,6 +27,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - RedisBloom >= 0.2.0
 - Redis >= 3.0.1
 - kafka-python >= 1.4.7
+- SQLAlchemy >= 1.4.0
 
 ## **TODO**
 
@@ -34,7 +37,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - ~~Custom Interface for DupeFilter~~
 - RocketMQ Scheduler
 - RocketMQ Item Pipeline
-- SQLAlchemy Item Pipeline
+- ~~SQLAlchemy Item Pipeline~~
 - Mongodb Item Pipeline
 - ~~Kafka Scheduler~~
 - ~~Kafka Item Pipeline~~
@@ -189,6 +192,40 @@ scrapy crawl <your_spider>
 ```
 
 
+## SQLAlchemy Pipeline
+
+The `SqlAlchemyPipeline` stores scraped items into any relational database
+supported by SQLAlchemy (SQLite, PostgreSQL, MySQL, …).  The target table is
+created automatically the first time the spider runs.  All item fields are
+stored as `Text` columns.  New fields encountered in later items are added to
+the table automatically via `ALTER TABLE`.
+
+### **Step 1:**
+
+```python
+# settings.py
+
+# Any SQLAlchemy-compatible connection URL.
+SQLALCHEMY_CONNECTION_STRING = "sqlite:///items.db"
+
+# Optional: override the default table name ("<spider_name>_items").
+# SQLALCHEMY_TABLE_NAME = "my_table"
+
+ITEM_PIPELINES = {
+    "scrapy_distributed.pipelines.sqlalchemy.SqlAlchemyPipeline": 300,
+}
+```
+
+### **Step 2:**
+
+```
+scrapy crawl <your_spider>
+```
+
+Items are written to the configured database table as the spider runs.
+
+---
+
 ## Custom DupeFilter
 
 You can implement your own deduplication logic by extending
@@ -262,6 +299,7 @@ The Scrapy-Distributed project enables building distributed crawlers on top of S
 - **RabbitQueue** and **KafkaQueue** serialize Scrapy requests to publish/consume through RabbitMQ or Kafka.
 - **RedisBloomDupeFilter** tracks seen URLs using Redis Bloom filters.
 - **RabbitMiddleware** and **RabbitPipeline** handle acknowledgement and item publishing.
+- **SqlAlchemyPipeline** persists scraped items to any SQLAlchemy-supported relational database.
 
 ### Example Usage
 Example projects under `examples/` demonstrate how to configure the scheduler, queue, middleware and pipeline. Supporting services can be launched with the provided `docker-compose.dev.yaml`.
