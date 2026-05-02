@@ -60,6 +60,7 @@ setup(
         "redisbloom>=0.2.0",
         "redis>=3.0.1",
         "kafka-python>=1.4.7",
-        "rocketmq-client-python>=2.0.0"
+        "rocketmq-client-python>=2.0.0",
+        "sqlalchemy>=1.4.0",
     ],
 )
