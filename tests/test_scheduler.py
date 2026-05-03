@@ -361,3 +361,42 @@ class TestDistributedQueueSchedulerPushPop:
         s.queue.pop.return_value = expected
         result = s.pop_distributed_queue()
         assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# close
+# ---------------------------------------------------------------------------
+
+class TestDistributedQueueSchedulerClose:
+    def test_close_delegates_to_dupefilter(self):
+        s = _make_scheduler()
+        s.df = MagicMock()
+        s.close("finished")
+        s.df.close.assert_called_once_with("finished")
+
+    def test_close_returns_dupefilter_result(self):
+        s = _make_scheduler()
+        s.df = MagicMock()
+        s.df.close.return_value = "done"
+        result = s.close("finished")
+        assert result == "done"
+
+
+# ---------------------------------------------------------------------------
+# requeue_message
+# ---------------------------------------------------------------------------
+
+class TestDistributedQueueSchedulerRequeueMessage:
+    def test_requeue_message_pushes_to_queue(self):
+        s = _make_scheduler()
+        s.queue = MagicMock()
+        s.requeue_message("http://example.com/")
+        s.queue.push.assert_called_once_with("http://example.com/", None)
+
+    def test_requeue_message_with_headers_pushes_headers(self):
+        s = _make_scheduler()
+        s.queue = MagicMock()
+        headers = {"x-retry": "1"}
+        s.requeue_message("http://example.com/", headers=headers)
+        s.queue.push.assert_called_once_with("http://example.com/", headers)
+
