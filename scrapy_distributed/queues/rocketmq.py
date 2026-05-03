@@ -112,7 +112,7 @@ class RocketMQQueue(IQueue):
         return self._request_from_dict(json.loads(body), scheduler.spider)
 
     @_try_operation
-    def push(self, request, scheduler, headers=None):
+    def push(self, request, scheduler):
         """Push a request onto the RocketMQ topic."""
         body: str = json.dumps(
             keys_string(self._request_to_dict(request, scheduler.spider)),

@@ -5,11 +5,8 @@ import logging
 from typing import Dict
 
 from scrapy.http.request import Request
-from scrapy_distributed.queues.common import BytesDump, keys_string, get_method
-from scrapy.utils.misc import load_object
-
-from scrapy.utils.reqser import request_to_dict
-from w3lib.util import to_unicode
+from scrapy_distributed.queues.common import BytesDump, keys_string
+from scrapy.utils.request import request_from_dict
 from scrapy_distributed.queues import IQueue
 import time
 
@@ -116,7 +113,7 @@ class RabbitQueue(IQueue):
 
     def _make_request(self, method, properties, body, scheduler):
         return self._request_from_dict(
-            json.loads(body.decode()), scheduler.spider, method, properties
+            json.loads(body.decode()), scheduler.spider
         )
 
     @_try_operation
@@ -170,38 +167,13 @@ class RabbitQueue(IQueue):
         self.channel.queue_purge(self.name)
 
     @classmethod
-    def _request_from_dict(cls, d, spider=None, method=None, properties=None):
-        """Create Request object from a dict.
-
-        If a spider is given, it will try to resolve the callbacks looking at the
-        spider for methods with the same name.
-        """
-        cb = d.get("callback", None)
-        if cb and spider:
-            cb = get_method(spider, cb)
-        eb = d.get("errback", None)
-        if eb and spider:
-            eb = get_method(spider, eb)
-        request_cls = load_object(d.get("_class", None)) if "_class" in d else Request
-        return request_cls(
-            url=to_unicode(d.get("url", None)),
-            callback=cb,
-            errback=eb,
-            method=d.get("method", None),
-            headers=d.get("headers", None),
-            body=d.get("body", None),
-            cookies=d.get("cookies", None),
-            meta=d.get("meta", None),
-            encoding=d.get("_encoding", "utf-8"),
-            priority=d.get("priority", 0),
-            dont_filter=d.get("dont_filter", True),
-            flags=d.get("flags", None),
-            cb_kwargs=d.get('cb_kwargs', None),
-        )
+    def _request_from_dict(cls, d, spider=None):
+        """Create Request object from a dict."""
+        return request_from_dict(d, spider=spider)
 
     @classmethod
     def _request_to_dict(cls, request, spider=None):
-        d = request_to_dict(request, spider)
+        d = request.to_dict(spider=spider)
         new_dict = dict()
         for key, value in d.items():
             if value:
