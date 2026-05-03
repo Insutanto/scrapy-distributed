@@ -36,7 +36,7 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
 - Support Scheduler Serializer
 - ~~Custom Interface for DupeFilter~~
 - RocketMQ Scheduler
-- RocketMQ Item Pipeline
+- ~~RocketMQ Item Pipeline~~
 - ~~SQLAlchemy Item Pipeline~~
 - Mongodb Item Pipeline
 - ~~Kafka Scheduler~~
@@ -57,7 +57,7 @@ git clone https://github.com/Insutanto/scrapy-distributed.git && cd scrapy-distr
 && python setup.py install
 ```
 
-There are example projects in `examples/rabbitmq_example` and `examples/kafka_example`. Here is the fast way to use `Scrapy-Distributed`.
+There are example projects in `examples/rabbitmq_example`, `examples/kafka_example` and `examples/rocketmq_example`. Here is the fast way to use `Scrapy-Distributed`.
 
 ### [Examples of RabbitMQ](examples/rabbitmq_example)
 
@@ -100,6 +100,19 @@ Or you can use docker compose:
 ```bash
 docker compose -f ./docker-compose.dev.yaml up -d
 cd examples/kafka_example
+python run_simple_example.py
+```
+
+### [Examples of RocketMQ](examples/rocketmq_example)
+
+If you don't have the required environment for tests:
+
+```bash
+# make sure you have a RocketMQ name server running on localhost:9876
+# pull and run a RedisBloom container.
+docker run -d --name redisbloom -p 6379:6379 redis/redis-stack
+
+cd examples/rocketmq_example
 python run_simple_example.py
 ```
 
@@ -184,6 +197,58 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 ```
+
+### **Step 2:**
+
+```
+scrapy crawl <your_spider>
+```
+
+
+## RocketMQ Pipeline
+
+The `RocketMQPipeline` publishes scraped items to a RocketMQ topic.
+
+### **Step 1:**
+
+```
+SCHEDULER = "scrapy_distributed.schedulers.DistributedScheduler"
+SCHEDULER_QUEUE_CLASS = "scrapy_distributed.queues.rocketmq.RocketMQQueue"
+ROCKETMQ_NAME_SERVER = "localhost:9876"
+DUPEFILTER_CLASS = "scrapy_distributed.dupefilters.redis_bloom.RedisBloomDupeFilter"
+BLOOM_DUPEFILTER_REDIS_URL = "redis://:@localhost:6379/0"
+BLOOM_DUPEFILTER_REDIS_HOST = "localhost"
+BLOOM_DUPEFILTER_REDIS_PORT = 6379
+REDIS_BLOOM_PARAMS = {
+    "redis_cls": "redisbloom.client.Client"
+}
+BLOOM_DUPEFILTER_ERROR_RATE = 0.001
+BLOOM_DUPEFILTER_CAPACITY = 100_0000
+
+# add RocketMQPipeline, it will push your items to a RocketMQ topic.
+ITEM_PIPELINES = {
+    ...
+   'scrapy_distributed.pipelines.rocketmq.RocketMQPipeline': 301,
+}
+```
+
+You can customise the topic, consumer group, tags, and keys used for items by
+setting an `item_conf` attribute on your spider:
+
+```python
+from scrapy_distributed.common.queue_config import RocketMQQueueConfig
+
+class MySpider(SitemapSpider):
+    name = "myspider"
+    item_conf = RocketMQQueueConfig(
+        topic="myspider.items",
+        group="myspider.items",
+        tags="scraped",
+    )
+```
+
+If no `item_conf` is provided the pipeline defaults to a topic named
+`<spider_name>.items` with the group `default`.
 
 ### **Step 2:**
 
@@ -298,7 +363,9 @@ The Scrapy-Distributed project enables building distributed crawlers on top of S
 - **DistributedScheduler** combines queue-based scheduling with a Redis Bloom duplicate filter.
 - **RabbitQueue** and **KafkaQueue** serialize Scrapy requests to publish/consume through RabbitMQ or Kafka.
 - **RedisBloomDupeFilter** tracks seen URLs using Redis Bloom filters.
-- **RabbitMiddleware** and **RabbitPipeline** handle acknowledgement and item publishing.
+- **RabbitMiddleware** and **RabbitPipeline** handle acknowledgement and item publishing for RabbitMQ.
+- **KafkaPipeline** publishes scraped items to a Kafka topic.
+- **RocketMQPipeline** publishes scraped items to a RocketMQ topic.
 - **SqlAlchemyPipeline** persists scraped items to any SQLAlchemy-supported relational database.
 
 ### Example Usage
