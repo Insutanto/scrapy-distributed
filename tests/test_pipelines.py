@@ -111,6 +111,39 @@ class TestRabbitPipeline:
             pipeline = RabbitPipeline.from_crawler(crawler)
         assert pipeline.item_conf.name == "myspider:items"
 
+    def test_from_crawler_with_spider_item_conf(self):
+        from scrapy_distributed.pipelines.amqp import RabbitPipeline
+        from scrapy_distributed.common.queue_config import RabbitQueueConfig
+        custom_conf = RabbitQueueConfig(name="custom-items", durable=True)
+        crawler = MagicMock()
+        crawler.spider = SimpleNamespace(name="myspider", item_conf=custom_conf)
+        crawler.settings.get.return_value = "amqp://localhost/"
+        with patch("scrapy_distributed.pipelines.amqp.connection") as mock_conn:
+            mock_conn.connect.return_value = MagicMock()
+            mock_conn.get_channel.return_value = MagicMock()
+            pipeline = RabbitPipeline.from_crawler(crawler)
+        assert pipeline.item_conf is custom_conf
+
+    def test_process_item_returns_deferred(self):
+        from twisted.internet import defer
+        pipeline = self._make_pipeline()
+        from scrapy.item import Item, Field
+        class TestItem(Item):
+            url = Field()
+        item = TestItem(url="http://example.com/")
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline.process_item(item, spider)
+        assert isinstance(result, defer.Deferred)
+
+    def test_connect_closes_existing_connection(self):
+        pipeline = self._make_pipeline()
+        old_connection = pipeline.connection
+        with patch("scrapy_distributed.pipelines.amqp.connection") as mock_conn:
+            mock_conn.connect.return_value = MagicMock()
+            mock_conn.get_channel.return_value = MagicMock()
+            pipeline.connect()
+        old_connection.close.assert_called_once()
+
 
 # ===========================================================================
 # KafkaPipeline
@@ -191,6 +224,29 @@ class TestKafkaPipeline:
             MockProducer.return_value = MagicMock()
             pipeline = KafkaPipeline.from_crawler(crawler)
         assert pipeline.item_conf.topic == "myspider.items"
+
+    def test_from_crawler_with_spider_item_conf(self):
+        from scrapy_distributed.pipelines.kafka import KafkaPipeline
+        from scrapy_distributed.common.queue_config import KafkaQueueConfig
+        custom_conf = KafkaQueueConfig(topic="custom-topic", num_partitions=2)
+        crawler = MagicMock()
+        crawler.spider = SimpleNamespace(name="myspider", item_conf=custom_conf)
+        crawler.settings.get.return_value = "localhost:9092"
+        with patch("scrapy_distributed.pipelines.kafka.KafkaAdminClient") as MockAdmin, \
+             patch("scrapy_distributed.pipelines.kafka.KafkaProducer") as MockProducer:
+            MockAdmin.return_value = MagicMock()
+            MockProducer.return_value = MagicMock()
+            pipeline = KafkaPipeline.from_crawler(crawler)
+        assert pipeline.item_conf is custom_conf
+
+    def test_process_item_returns_deferred(self):
+        from twisted.internet import defer
+        pipeline = self._make_pipeline()
+        item = MagicMock()
+        item._values = {"url": "http://example.com/"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline.process_item(item, spider)
+        assert isinstance(result, defer.Deferred)
 
 
 # ===========================================================================
@@ -295,3 +351,42 @@ class TestRocketMQPipeline:
             MockProducer.return_value = MagicMock()
             pipeline = RocketMQPipeline.from_crawler(crawler)
         assert pipeline.item_conf.topic == "myspider.items"
+
+    def test_from_crawler_with_spider_item_conf(self):
+        from scrapy_distributed.pipelines.rocketmq import RocketMQPipeline
+        from scrapy_distributed.common.queue_config import RocketMQQueueConfig
+        custom_conf = RocketMQQueueConfig(topic="custom-topic", group="custom-group")
+        crawler = MagicMock()
+        crawler.spider = SimpleNamespace(name="myspider", item_conf=custom_conf)
+        crawler.settings.get.return_value = "127.0.0.1:9876"
+        with patch("scrapy_distributed.pipelines.rocketmq.Producer") as MockProducer:
+            MockProducer.return_value = MagicMock()
+            pipeline = RocketMQPipeline.from_crawler(crawler)
+        assert pipeline.item_conf is custom_conf
+
+    def test_process_item_returns_deferred(self):
+        from twisted.internet import defer
+        pipeline = self._make_pipeline()
+        with patch("scrapy_distributed.pipelines.rocketmq.Message") as MockMessage:
+            MockMessage.return_value = MagicMock()
+            item = MagicMock()
+            item._values = {"url": "http://example.com/"}
+            spider = SimpleNamespace(name="spider", logger=MagicMock())
+            result = pipeline.process_item(item, spider)
+        assert isinstance(result, defer.Deferred)
+
+    def test_process_item_sets_keys_when_configured(self):
+        from scrapy_distributed.pipelines.rocketmq import RocketMQPipeline
+        with patch("scrapy_distributed.pipelines.rocketmq.Producer") as MockProducer, \
+             patch("scrapy_distributed.pipelines.rocketmq.Message") as MockMessage:
+            MockProducer.return_value = MagicMock()
+            mock_msg = MagicMock()
+            MockMessage.return_value = mock_msg
+            from scrapy_distributed.common.queue_config import RocketMQQueueConfig
+            conf = RocketMQQueueConfig(topic="items", keys="order-id")
+            pipeline = RocketMQPipeline(item_conf=conf, name_server="127.0.0.1:9876")
+            item = MagicMock()
+            item._values = {"url": "http://example.com/"}
+            spider = SimpleNamespace(name="spider", logger=MagicMock())
+            pipeline._process_item(item, spider)
+        mock_msg.set_keys.assert_called_once_with("order-id")
