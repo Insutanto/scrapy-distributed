@@ -12,6 +12,10 @@ def get_channel(
     exclusive=False,
     auto_delete=False,
     arguments=None,
+    exchange=None,
+    exchange_type="direct",
+    exchange_durable=True,
+    exchange_arguments=None,
 ):
     """ Init method to return a prepared channel for consuming
     """
@@ -24,6 +28,14 @@ def get_channel(
         auto_delete=auto_delete,
         arguments=arguments,
     )
+    if exchange:
+        channel.exchange_declare(
+            exchange=exchange,
+            exchange_type=exchange_type,
+            durable=exchange_durable,
+            arguments=exchange_arguments,
+        )
+        channel.queue_bind(queue=queue, exchange=exchange, routing_key=queue)
     # channel.confirm_delivery()
     return channel
 
