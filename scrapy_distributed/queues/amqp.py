@@ -11,7 +11,8 @@ from scrapy.utils.misc import load_object
 try:
     from scrapy.utils.reqser import request_to_dict
 except ImportError:
-    # scrapy.utils.reqser was removed in Scrapy 2.6+
+    # scrapy.utils.reqser was removed in Scrapy 2.6+; Request.to_dict() was
+    # introduced in the same release so this fallback is always safe for Scrapy >= 2.6.
     def request_to_dict(request, spider=None):
         return request.to_dict(spider=spider)
 from w3lib.util import to_unicode
@@ -146,7 +147,12 @@ class RabbitQueue(IQueue):
         msg_headers = dict(headers) if headers else {}
         delay = request.meta.get("delay") if hasattr(request, "meta") else None
         if delay is not None:
-            msg_headers["x-delay"] = int(delay)
+            try:
+                msg_headers["x-delay"] = int(delay)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"request.meta['delay'] must be a number (milliseconds), got {delay!r}"
+                ) from exc
         publish_exchange = self.exchange if self.exchange else exchange
         if msg_headers:
             properties = pika.BasicProperties(

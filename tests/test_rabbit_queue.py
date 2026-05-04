@@ -237,8 +237,19 @@ class TestRabbitQueuePushDelayedMessage:
         # No x-delay header when delay is not set
         assert props.headers is None or "x-delay" not in (props.headers or {})
 
-    def test_properties_none_handled_gracefully(self):
-        """RabbitQueue with no properties dict should not raise."""
+    def test_push_with_invalid_delay_raises_value_error(self):
+        q = make_rabbit_queue(name="myqueue")
+        scheduler = make_scheduler()
+        request = self._make_request(delay="not-a-number")
+
+        with patch.object(q, "_request_to_dict", return_value={"url": "http://example.com"}), \
+             patch.object(q, "connect"), \
+             patch("scrapy_distributed.queues.amqp.time.sleep"):
+            with pytest.raises(ValueError, match="request.meta\\['delay'\\]"):
+                q.push(request, scheduler)
+
+    def test_properties_none_does_not_raise(self):
+        """RabbitQueue constructed with properties=None should not raise during push."""
         from scrapy_distributed.queues.amqp import RabbitQueue
 
         mock_channel = MagicMock()
