@@ -8,7 +8,12 @@ from scrapy.http.request import Request
 from scrapy_distributed.queues.common import BytesDump, keys_string, get_method
 from scrapy.utils.misc import load_object
 
-from scrapy.utils.reqser import request_to_dict
+try:
+    from scrapy.utils.reqser import request_to_dict
+except ImportError:
+    # scrapy.utils.reqser was removed in Scrapy 2.6+
+    def request_to_dict(request, spider=None):
+        return request.to_dict(spider=spider)
 from w3lib.util import to_unicode
 from scrapy_distributed.queues import IQueue
 import time
@@ -59,7 +64,11 @@ class RabbitQueue(IQueue):
         exclusive=False,
         auto_delete=False,
         arguments=None,
-        properties=None
+        properties=None,
+        exchange=None,
+        exchange_type="direct",
+        exchange_durable=True,
+        exchange_arguments=None,
     ):
         """Initialize per-spider RabbitMQ queue.
 
@@ -74,7 +83,11 @@ class RabbitQueue(IQueue):
         self.exclusive = exclusive
         self.auto_delete = auto_delete
         self.arguments = arguments
-        self.properties = properties
+        self.properties = properties or {}
+        self.exchange = exchange
+        self.exchange_type = exchange_type
+        self.exchange_durable = exchange_durable
+        self.exchange_arguments = exchange_arguments
         self.connection = None
         self.channel = None
         self.connect()
@@ -89,7 +102,11 @@ class RabbitQueue(IQueue):
             exclusive=queue_conf.exclusive,
             auto_delete=queue_conf.auto_delete,
             arguments=queue_conf.arguments,
-            properties = queue_conf.properties
+            properties=queue_conf.properties,
+            exchange=queue_conf.exchange,
+            exchange_type=queue_conf.exchange_type,
+            exchange_durable=queue_conf.exchange_durable,
+            exchange_arguments=queue_conf.exchange_arguments,
         )
 
     def __len__(self):
@@ -126,14 +143,19 @@ class RabbitQueue(IQueue):
                 keys_string(self._request_to_dict(request, scheduler.spider)),
                 cls=BytesDump,
             )
-        if headers:
+        msg_headers = dict(headers) if headers else {}
+        delay = request.meta.get("delay") if hasattr(request, "meta") else None
+        if delay is not None:
+            msg_headers["x-delay"] = int(delay)
+        publish_exchange = self.exchange if self.exchange else exchange
+        if msg_headers:
             properties = pika.BasicProperties(
-                headers=headers, 
+                headers=msg_headers,
                 delivery_mode=self.properties.get("delivery_mode", 1))
         else:
             properties = pika.BasicProperties(delivery_mode=self.properties.get("delivery_mode", 1))
         self.channel.basic_publish(
-            exchange=exchange, routing_key=self.name, body=body, properties=properties
+            exchange=publish_exchange, routing_key=self.name, body=body, properties=properties
         )
 
     @_try_operation
@@ -158,6 +180,10 @@ class RabbitQueue(IQueue):
             exclusive=self.exclusive,
             auto_delete=self.auto_delete,
             arguments=self.arguments,
+            exchange=self.exchange,
+            exchange_type=self.exchange_type,
+            exchange_durable=self.exchange_durable,
+            exchange_arguments=self.exchange_arguments,
         )
 
     def close(self):
