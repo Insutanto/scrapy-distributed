@@ -10,8 +10,14 @@ from queuelib import PriorityQueue
 import warnings
 from scrapy_distributed.queues.kafka import KafkaQueue
 from scrapy_distributed.queues.amqp import RabbitQueue
+from scrapy_distributed.queues.redis_stream import RedisStreamQueue
 from scrapy_distributed.queues.rocketmq import RocketMQQueue
-from scrapy_distributed.common.queue_config import RabbitQueueConfig, KafkaQueueConfig, RocketMQQueueConfig
+from scrapy_distributed.common.queue_config import (
+    RabbitQueueConfig,
+    KafkaQueueConfig,
+    RedisStreamQueueConfig,
+    RocketMQQueueConfig,
+)
 from scrapy.utils.deprecate import ScrapyDeprecationWarning
 
 logger = logging.getLogger(__name__)
@@ -55,6 +61,7 @@ class DistributedQueueScheduler(Scheduler):
         settings = crawler.settings
         rabbit_connection_conf = settings.get("RABBITMQ_CONNECTION_PARAMETERS")
         kafka_connection_conf = settings.get("KAFKA_CONNECTION_PARAMETERS")
+        redis_stream_connection_conf = settings.get("REDIS_STREAM_CONNECTION_PARAMETERS")
         rocketmq_name_server = settings.get("ROCKETMQ_NAME_SERVER")
         custom_connection_conf = settings.get("CUSTOM_CONNECTION_PARAMETERS")
         queue_class = load_object(settings.get("SCHEDULER_QUEUE_CLASS"))
@@ -79,6 +86,8 @@ class DistributedQueueScheduler(Scheduler):
             connection_conf = rabbit_connection_conf
         elif queue_class == KafkaQueue:
             connection_conf = kafka_connection_conf
+        elif queue_class == RedisStreamQueue:
+            connection_conf = redis_stream_connection_conf
         elif queue_class == RocketMQQueue:
             connection_conf = rocketmq_name_server
         else:
@@ -110,6 +119,8 @@ class DistributedQueueScheduler(Scheduler):
                 queue_conf: RabbitQueueConfig = RabbitQueueConfig(spider.name)
             elif self.queue_class == KafkaQueue:
                 queue_conf: KafkaQueueConfig = KafkaQueueConfig(spider.name)
+            elif self.queue_class == RedisStreamQueue:
+                queue_conf: RedisStreamQueueConfig = RedisStreamQueueConfig(spider.name)
             elif self.queue_class == RocketMQQueue:
                 queue_conf: RocketMQQueueConfig = RocketMQQueueConfig(spider.name)
             else:
