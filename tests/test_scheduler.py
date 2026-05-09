@@ -26,10 +26,12 @@ sys.modules.setdefault("rocketmq.client", _rocketmq_client_stub)
 from scrapy_distributed.schedulers.common import DistributedQueueScheduler  # noqa: E402
 from scrapy_distributed.queues.amqp import RabbitQueue  # noqa: E402
 from scrapy_distributed.queues.kafka import KafkaQueue  # noqa: E402
+from scrapy_distributed.queues.redis_stream import RedisStreamQueue  # noqa: E402
 from scrapy_distributed.queues.rocketmq import RocketMQQueue  # noqa: E402
 from scrapy_distributed.common.queue_config import (  # noqa: E402
     RabbitQueueConfig,
     KafkaQueueConfig,
+    RedisStreamQueueConfig,
     RocketMQQueueConfig,
 )
 
@@ -111,6 +113,7 @@ class TestDistributedQueueSchedulerFromCrawler:
             "SCHEDULER_DEBUG": False,
             "RABBITMQ_CONNECTION_PARAMETERS": "amqp://localhost/",
             "KAFKA_CONNECTION_PARAMETERS": "localhost:9092",
+            "REDIS_STREAM_CONNECTION_PARAMETERS": "redis://localhost:6379/0",
             "ROCKETMQ_NAME_SERVER": "127.0.0.1:9876",
             "CUSTOM_CONNECTION_PARAMETERS": None,
             "JOBDIR": None,
@@ -155,6 +158,16 @@ class TestDistributedQueueSchedulerFromCrawler:
         assert scheduler.connection_conf == "127.0.0.1:9876"
         assert scheduler.queue_class is RocketMQQueue
 
+    def test_from_crawler_redis_stream_sets_redis_connection(self):
+        crawler = self._make_crawler(
+            "scrapy_distributed.queues.redis_stream.RedisStreamQueue"
+        )
+        with patch("scrapy_distributed.schedulers.common.build_from_crawler") as mock_bfc:
+            mock_bfc.return_value = MagicMock()
+            scheduler = DistributedQueueScheduler.from_crawler(crawler)
+        assert scheduler.connection_conf == "redis://localhost:6379/0"
+        assert scheduler.queue_class is RedisStreamQueue
+
 
 # ---------------------------------------------------------------------------
 # open
@@ -191,6 +204,12 @@ class TestDistributedQueueSchedulerOpen:
     def test_open_creates_rocketmq_queue_from_spider_name(self):
         s, q = self._open_with_mock_queue(
             RocketMQQueue, connection_conf="127.0.0.1:9876"
+        )
+        assert s.queue is q
+
+    def test_open_creates_redis_stream_queue_from_spider_name(self):
+        s, q = self._open_with_mock_queue(
+            RedisStreamQueue, connection_conf="redis://localhost:6379/0"
         )
         assert s.queue is q
 
@@ -399,4 +418,3 @@ class TestDistributedQueueSchedulerRequeueMessage:
         headers = {"x-retry": "1"}
         s.requeue_message("http://example.com/", headers=headers)
         s.queue.push.assert_called_once_with("http://example.com/", headers)
-

@@ -21,4 +21,4 @@ class IQueue(object):
         raise NotImplementedError
 
 
-__all__ = ["common", "amqp", "kafka", "rocketmq"]
+__all__ = ["common", "amqp", "kafka", "rocketmq", "redis_stream"]

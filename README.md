@@ -2,7 +2,7 @@
 
 `Scrapy-Distributed` is a series of components for you to develop a distributed crawler base on `Scrapy` in an easy way.
 
-Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Scheduler` and `RedisBloom DupeFilter`. You can use either of those in your Scrapy's project very easily.
+Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Scheduler`, `RocketMQ Scheduler`, `Redis Streams Scheduler` and `RedisBloom DupeFilter`. You can use either of those in your Scrapy's project very easily.
 
 ## **Features**
 
@@ -12,6 +12,8 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
     - Support custom declare a RabbitMQ's Queue for the items of spider. Such as `passive`, `durable`, `exclusive`, `auto_delete`, and all other options.
 - Kafka Scheduler
     - Support custom declare a Kafka's Topic. Such as `num_partitions`, `replication_factor` and will support other options.
+- Redis Streams Scheduler
+    - Support using Redis Streams (`XADD`/`XREAD`) as the scheduler queue backend.
 - RedisBloom DupeFilter
     - Support custom the `key`, `errorRate`, `capacity`, `expansion` and auto-scaling(`noScale`) of a bloom filter.
 - Custom DupeFilter Interface
@@ -196,6 +198,43 @@ DOWNLOADER_MIDDLEWARES = {
    "scrapy_distributed.middlewares.kafka.KafkaMiddleware": 542
 }
 
+```
+
+### **Step 2:**
+
+```
+scrapy crawl <your_spider>
+```
+
+
+## Redis Streams Support
+
+### **Step 1:**
+```
+SCHEDULER = "scrapy_distributed.schedulers.DistributedScheduler"
+SCHEDULER_QUEUE_CLASS = "scrapy_distributed.queues.redis_stream.RedisStreamQueue"
+REDIS_STREAM_CONNECTION_PARAMETERS = "redis://localhost:6379/0"
+DUPEFILTER_CLASS = "scrapy_distributed.dupefilters.redis_bloom.RedisBloomDupeFilter"
+BLOOM_DUPEFILTER_REDIS_URL = "redis://:@localhost:6379/0"
+BLOOM_DUPEFILTER_REDIS_HOST = "localhost"
+BLOOM_DUPEFILTER_REDIS_PORT = 6379
+REDIS_BLOOM_PARAMS = {
+    "redis_cls": "redisbloom.client.Client"
+}
+BLOOM_DUPEFILTER_ERROR_RATE = 0.001
+BLOOM_DUPEFILTER_CAPACITY = 100_0000
+```
+
+You can customise the stream key and publish behaviour by setting a `queue_conf`
+attribute on your spider:
+
+```python
+from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+
+queue_conf = RedisStreamQueueConfig(
+    name="myspider:requests",
+    maxlen=100000,
+)
 ```
 
 ### **Step 2:**
