@@ -9,7 +9,11 @@ class RabbitQueueConfig(object):
         exclusive=False,
         auto_delete=False,
         arguments=None,
-        properties=None
+        properties=None,
+        exchange=None,
+        exchange_type="direct",
+        exchange_durable=True,
+        exchange_arguments=None,
     ):
         self.name = name
         self.passive = passive
@@ -18,6 +22,10 @@ class RabbitQueueConfig(object):
         self.auto_delete = auto_delete
         self.arguments = arguments
         self.properties = properties
+        self.exchange = exchange
+        self.exchange_type = exchange_type
+        self.exchange_durable = exchange_durable
+        self.exchange_arguments = exchange_arguments
 
 
 class KafkaQueueConfig(object):

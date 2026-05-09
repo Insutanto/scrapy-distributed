@@ -19,6 +19,10 @@ class TestRabbitQueueConfig:
         assert cfg.auto_delete is False
         assert cfg.arguments is None
         assert cfg.properties is None
+        assert cfg.exchange is None
+        assert cfg.exchange_type == "direct"
+        assert cfg.exchange_durable is True
+        assert cfg.exchange_arguments is None
 
     def test_custom_values(self):
         cfg = RabbitQueueConfig(
@@ -37,6 +41,20 @@ class TestRabbitQueueConfig:
         assert cfg.auto_delete is True
         assert cfg.arguments == {"x-max-priority": 10}
         assert cfg.properties == {"delivery_mode": 2}
+
+    def test_delayed_exchange_config(self):
+        cfg = RabbitQueueConfig(
+            name="tasks",
+            durable=True,
+            exchange="tasks_delayed",
+            exchange_type="x-delayed-message",
+            exchange_durable=True,
+            exchange_arguments={"x-delayed-type": "direct"},
+        )
+        assert cfg.exchange == "tasks_delayed"
+        assert cfg.exchange_type == "x-delayed-message"
+        assert cfg.exchange_durable is True
+        assert cfg.exchange_arguments == {"x-delayed-type": "direct"}
 
 
 class TestKafkaQueueConfig:
