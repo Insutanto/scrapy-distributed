@@ -291,6 +291,28 @@ Items are written to the configured database table as the spider runs.
 
 ---
 
+## Redis Streams Pipeline
+
+The `RedisStreamPipeline` publishes scraped items into a Redis Stream.
+
+```python
+from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+
+item_conf = RedisStreamQueueConfig(
+    name="myspider:items",
+    maxlen=10000,
+)
+
+ITEM_PIPELINES = {
+    "scrapy_distributed.pipelines.redis_stream.RedisStreamPipeline": 300,
+}
+```
+
+If `item_conf` is not set on the spider, the stream defaults to
+`<spider_name>:items`.
+
+---
+
 ## Custom DupeFilter
 
 You can implement your own deduplication logic by extending

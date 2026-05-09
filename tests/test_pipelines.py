@@ -8,6 +8,7 @@ All broker interactions are mocked – no real broker required.
 """
 import sys
 import types
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, call
 import pytest
@@ -390,3 +391,121 @@ class TestRocketMQPipeline:
             spider = SimpleNamespace(name="spider", logger=MagicMock())
             pipeline._process_item(item, spider)
         mock_msg.set_keys.assert_called_once_with("order-id")
+
+
+# ===========================================================================
+# RedisStreamPipeline
+# ===========================================================================
+
+class TestRedisStreamPipeline:
+    def _make_pipeline(self, item_conf=None):
+        from scrapy_distributed.pipelines.redis_stream import RedisStreamPipeline
+        from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+        if item_conf is None:
+            item_conf = RedisStreamQueueConfig(name="items")
+        return RedisStreamPipeline(item_conf=item_conf, redis_client=MagicMock())
+
+    def test_construction_sets_attributes(self):
+        from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+        conf = RedisStreamQueueConfig(name="myitems")
+        pipeline = self._make_pipeline(item_conf=conf)
+        assert pipeline.item_conf is conf
+
+    def test_item_key_uses_spider_name(self):
+        from scrapy_distributed.pipelines.redis_stream import RedisStreamPipeline
+        spider = SimpleNamespace(name="myspider")
+        assert RedisStreamPipeline.item_key(None, spider) == "myspider:items"
+
+    def test_process_item_pushes_to_redis_stream(self):
+        pipeline = self._make_pipeline()
+        item = MagicMock()
+        item._values = {"url": "http://example.com/", "title": "Test"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        pipeline._process_item(item, spider)
+        pipeline.redis_client.xadd.assert_called_once()
+
+    def test_process_item_uses_item_conf_options(self):
+        from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+        conf = RedisStreamQueueConfig(
+            name="my-stream", id="0-0", maxlen=1000, approximate=False
+        )
+        pipeline = self._make_pipeline(item_conf=conf)
+        item = MagicMock()
+        item._values = {"url": "http://example.com/"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        pipeline._process_item(item, spider)
+        _, kwargs = pipeline.redis_client.xadd.call_args
+        assert kwargs["name"] == "my-stream"
+        assert kwargs["id"] == "0-0"
+        assert kwargs["maxlen"] == 1000
+        assert kwargs["approximate"] is False
+
+    def test_process_item_passes_through_arguments(self):
+        from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+        conf = RedisStreamQueueConfig(name="my-stream", arguments={"nomkstream": True})
+        pipeline = self._make_pipeline(item_conf=conf)
+        item = MagicMock()
+        item._values = {"url": "http://example.com/"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        pipeline._process_item(item, spider)
+        _, kwargs = pipeline.redis_client.xadd.call_args
+        assert kwargs["nomkstream"] is True
+
+    def test_process_item_returns_item(self):
+        pipeline = self._make_pipeline()
+        item = MagicMock()
+        item._values = {"url": "http://example.com/"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline._process_item(item, spider)
+        assert result is item
+
+    def test_process_item_accepts_plain_dict_item(self):
+        pipeline = self._make_pipeline()
+        item = {"url": "http://example.com/", "title": "dict-item"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline._process_item(item, spider)
+        _, kwargs = pipeline.redis_client.xadd.call_args
+        payload = json.loads(kwargs["fields"]["data"])
+        assert payload["title"] == "dict-item"
+        assert result is item
+
+    def test_close_tolerates_missing_close_method(self):
+        pipeline = self._make_pipeline()
+        del pipeline.redis_client.close
+        pipeline.close()
+
+    def test_close_calls_client_close_when_available(self):
+        pipeline = self._make_pipeline()
+        pipeline.close()
+        pipeline.redis_client.close.assert_called_once()
+
+    def test_from_crawler_defaults_item_conf_from_spider_name(self):
+        from scrapy_distributed.pipelines.redis_stream import RedisStreamPipeline
+        crawler = MagicMock()
+        crawler.spider = SimpleNamespace(name="myspider")
+        crawler.settings = MagicMock()
+        with patch("scrapy_distributed.pipelines.redis_stream.get_redis_from_settings") as mock_get_redis:
+            mock_get_redis.return_value = MagicMock()
+            pipeline = RedisStreamPipeline.from_crawler(crawler)
+        assert pipeline.item_conf.name == "myspider:items"
+
+    def test_from_crawler_with_spider_item_conf(self):
+        from scrapy_distributed.pipelines.redis_stream import RedisStreamPipeline
+        from scrapy_distributed.common.queue_config import RedisStreamQueueConfig
+        custom_conf = RedisStreamQueueConfig(name="custom-items")
+        crawler = MagicMock()
+        crawler.spider = SimpleNamespace(name="myspider", item_conf=custom_conf)
+        crawler.settings = MagicMock()
+        with patch("scrapy_distributed.pipelines.redis_stream.get_redis_from_settings") as mock_get_redis:
+            mock_get_redis.return_value = MagicMock()
+            pipeline = RedisStreamPipeline.from_crawler(crawler)
+        assert pipeline.item_conf is custom_conf
+
+    def test_process_item_returns_deferred(self):
+        from twisted.internet import defer
+        pipeline = self._make_pipeline()
+        item = MagicMock()
+        item._values = {"url": "http://example.com/"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline.process_item(item, spider)
+        assert isinstance(result, defer.Deferred)
