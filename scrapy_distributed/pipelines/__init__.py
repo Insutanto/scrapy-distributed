@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__all__ = ["amqp", "kafka", "rocketmq", "sqlalchemy"]
+__all__ = ["amqp", "kafka", "rocketmq", "redis_stream", "sqlalchemy"]

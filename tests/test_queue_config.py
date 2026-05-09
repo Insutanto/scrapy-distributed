@@ -3,6 +3,7 @@ from scrapy_distributed.common.queue_config import (
     RabbitQueueConfig,
     KafkaQueueConfig,
     RocketMQQueueConfig,
+    RedisStreamQueueConfig,
 )
 
 
@@ -88,3 +89,30 @@ class TestRocketMQQueueConfig:
         assert cfg.tags == "urgent"
         assert cfg.keys == "order_id"
         assert cfg.arguments == {"delay_level": 1}
+
+
+class TestRedisStreamQueueConfig:
+    def test_required_name(self):
+        cfg = RedisStreamQueueConfig(name="items")
+        assert cfg.name == "items"
+
+    def test_defaults(self):
+        cfg = RedisStreamQueueConfig(name="items")
+        assert cfg.id == "*"
+        assert cfg.maxlen is None
+        assert cfg.approximate is True
+        assert cfg.arguments is None
+
+    def test_custom_values(self):
+        cfg = RedisStreamQueueConfig(
+            name="items",
+            id="0-0",
+            maxlen=1000,
+            approximate=False,
+            arguments={"foo": "bar"},
+        )
+        assert cfg.name == "items"
+        assert cfg.id == "0-0"
+        assert cfg.maxlen == 1000
+        assert cfg.approximate is False
+        assert cfg.arguments == {"foo": "bar"}

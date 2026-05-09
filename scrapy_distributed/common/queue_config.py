@@ -41,3 +41,12 @@ class RocketMQQueueConfig(object):
         self.tags = tags
         self.keys = keys
         self.arguments = arguments
+
+
+class RedisStreamQueueConfig(object):
+    def __init__(self, name, id="*", maxlen=None, approximate=True, arguments=None):
+        self.name = name
+        self.id = id
+        self.maxlen = maxlen
+        self.approximate = approximate
+        self.arguments = arguments
