@@ -161,6 +161,16 @@ class TestRabbitQueuePushDelayedMessage:
         props = kwargs.get("properties") or args[2]
         assert props.headers is None or props.headers == {}
 
+    def test_push_uses_explicit_exchange_argument_when_not_configured(self):
+        q = make_rabbit_queue(name="myqueue")
+        scheduler = make_scheduler()
+
+        with patch.object(q, "_request_to_dict", return_value={"url": "http://example.com"}):
+            q.push(self._make_request(), scheduler, exchange="explicit_exchange")
+
+        _, kwargs = q.channel.basic_publish.call_args
+        assert kwargs.get("exchange") == "explicit_exchange"
+
     def test_push_with_delay_adds_x_delay_header(self):
         q = make_rabbit_queue(name="myqueue")
         scheduler = make_scheduler()
@@ -224,6 +234,18 @@ class TestRabbitQueuePushDelayedMessage:
         props = kwargs.get("properties")
         assert props.headers["x-delay"] == 1000
         assert props.headers["x-custom"] == "val"
+
+    def test_push_delay_overrides_existing_x_delay_header(self):
+        q = make_rabbit_queue(name="myqueue")
+        scheduler = make_scheduler()
+
+        with patch.object(q, "_request_to_dict", return_value={"url": "http://example.com"}):
+            q.push(self._make_request(delay=1500), scheduler, headers={"x-delay": 100, "x-custom": "v"})
+
+        _, kwargs = q.channel.basic_publish.call_args
+        props = kwargs.get("properties")
+        assert props.headers["x-delay"] == 1500
+        assert props.headers["x-custom"] == "v"
 
     def test_push_without_delay_meta_does_not_set_x_delay(self):
         q = make_rabbit_queue(name="myqueue")
