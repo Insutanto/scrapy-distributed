@@ -8,6 +8,7 @@ All broker interactions are mocked – no real broker required.
 """
 import sys
 import types
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, call
 import pytest
@@ -456,6 +457,16 @@ class TestRedisStreamPipeline:
         item._values = {"url": "http://example.com/"}
         spider = SimpleNamespace(name="spider", logger=MagicMock())
         result = pipeline._process_item(item, spider)
+        assert result is item
+
+    def test_process_item_accepts_plain_dict_item(self):
+        pipeline = self._make_pipeline()
+        item = {"url": "http://example.com/", "title": "dict-item"}
+        spider = SimpleNamespace(name="spider", logger=MagicMock())
+        result = pipeline._process_item(item, spider)
+        _, kwargs = pipeline.redis_client.xadd.call_args
+        payload = json.loads(kwargs["fields"]["data"])
+        assert payload["title"] == "dict-item"
         assert result is item
 
     def test_close_tolerates_missing_close_method(self):
