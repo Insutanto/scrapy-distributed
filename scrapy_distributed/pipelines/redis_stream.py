@@ -60,4 +60,4 @@ class RedisStreamPipeline(object):
                 close()
             except Exception:
                 pass
-        logger.error("redis stream pipeline client is closed")
+        logger.info("redis stream pipeline client is closed")
