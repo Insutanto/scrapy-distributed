@@ -46,7 +46,7 @@ class RedisStreamPipeline(object):
             approximate=self.item_conf.approximate,
             **kwargs,
         )
-        spider.logger.info(f"produce: {data}")
+        spider.logger.info(f"published item to redis stream {self.item_conf.name}: {data}")
         return item
 
     @classmethod
