@@ -11,7 +11,7 @@ except ImportError:  # pragma: no cover
     PageMethod = None
 
 
-class DynamicCrawlerMiddleware(object):
+class DynamicCrawlerMiddleware:
     """
     Optional middleware for dynamic pages and basic anti-crawling hardening.
     """
@@ -24,11 +24,11 @@ class DynamicCrawlerMiddleware(object):
 
     @classmethod
     def from_settings(cls, settings):
-        return DynamicCrawlerMiddleware(settings)
+        return cls(settings)
 
     @classmethod
     def from_crawler(cls, crawler):
-        return DynamicCrawlerMiddleware(crawler.settings)
+        return cls(crawler.settings)
 
     def process_request(self, request, spider):
         if self.user_agents and b"User-Agent" not in request.headers:

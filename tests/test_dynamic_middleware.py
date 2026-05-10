@@ -34,7 +34,7 @@ class TestDynamicCrawlerMiddleware:
         assert request.headers.get("User-Agent") == b"ua-1"
         assert request.meta["proxy"] == "http://127.0.0.1:9000"
 
-    def test_sets_playwright_click_methods(self):
+    def test_converts_click_selectors_to_playwright_page_methods(self):
         mw = DynamicCrawlerMiddleware(_make_settings())
         request = Request("http://example.com", meta={"dynamic_click_selectors": ["#load-more"]})
 
