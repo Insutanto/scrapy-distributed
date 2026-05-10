@@ -18,6 +18,8 @@ Now! `Scrapy-Distributed` has supported `RabbitMQ Scheduler`, `Kafka Schedule
     - Implement your own deduplication logic by extending `BaseDupeFilter`.
 - SQLAlchemy Pipeline
     - Persist scraped items to any relational database supported by SQLAlchemy (SQLite, PostgreSQL, MySQL, etc.).  The table schema is inferred automatically from item fields.
+- Dynamic Crawler Middleware
+    - Optional click simulation (via `scrapy-playwright`) and anti-crawling hardening (User-Agent/proxy rotation + blocked-status retry).
 
 ## **Requirements**
 
@@ -288,6 +290,41 @@ scrapy crawl <your_spider>
 ```
 
 Items are written to the configured database table as the spider runs.
+
+---
+
+## Dynamic Crawler Middleware (Optional)
+
+Use `DynamicCrawlerMiddleware` to support dynamic pages and anti-crawling handling.
+
+```python
+DOWNLOADER_MIDDLEWARES = {
+    "scrapy_distributed.middlewares.dynamic.DynamicCrawlerMiddleware": 540,
+}
+
+# anti-crawling hardening
+DYNAMIC_CRAWLER_USER_AGENTS = [
+    "Mozilla/5.0 (X11; Linux x86_64)",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+]
+DYNAMIC_CRAWLER_PROXIES = [
+    "http://127.0.0.1:7890",
+]
+DYNAMIC_CRAWLER_BLOCK_STATUSES = [403, 429]
+DYNAMIC_CRAWLER_MAX_RETRY_TIMES = 2
+```
+
+For click simulation, set selectors on a request:
+
+```python
+yield scrapy.Request(
+    url,
+    meta={"dynamic_click_selectors": ["#load-more", ".next-page"]},
+)
+```
+
+If `scrapy-playwright` is installed, these selectors are converted into
+`playwright_page_methods` automatically.
 
 ---
 
