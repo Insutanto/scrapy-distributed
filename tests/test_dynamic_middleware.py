@@ -58,7 +58,12 @@ class TestDynamicCrawlerMiddleware:
         assert request.meta["playwright_page_methods"][0].selector == "#load-more"
 
     def test_retries_blocked_response(self):
-        mw = DynamicCrawlerMiddleware(_make_settings(DYNAMIC_CRAWLER_BLOCK_STATUSES=[403], DYNAMIC_CRAWLER_MAX_RETRY_TIMES=2))
+        mw = DynamicCrawlerMiddleware(
+            _make_settings(
+                DYNAMIC_CRAWLER_BLOCK_STATUSES=[403],
+                DYNAMIC_CRAWLER_MAX_RETRY_TIMES=2,
+            )
+        )
         request = Request("http://example.com")
         response = TextResponse(url="http://example.com", status=403, body=b"blocked")
 
@@ -69,7 +74,12 @@ class TestDynamicCrawlerMiddleware:
         assert result.meta["dynamic_retry_times"] == 1
 
     def test_stops_retry_after_limit(self):
-        mw = DynamicCrawlerMiddleware(_make_settings(DYNAMIC_CRAWLER_BLOCK_STATUSES=[403], DYNAMIC_CRAWLER_MAX_RETRY_TIMES=1))
+        mw = DynamicCrawlerMiddleware(
+            _make_settings(
+                DYNAMIC_CRAWLER_BLOCK_STATUSES=[403],
+                DYNAMIC_CRAWLER_MAX_RETRY_TIMES=1,
+            )
+        )
         request = Request("http://example.com", meta={"dynamic_retry_times": 1})
         response = TextResponse(url="http://example.com", status=403, body=b"blocked")
 
