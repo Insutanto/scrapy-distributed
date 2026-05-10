@@ -31,7 +31,7 @@ class DynamicCrawlerMiddleware:
         return cls(crawler.settings)
 
     def process_request(self, request, spider):
-        if self.user_agents and b"User-Agent" not in request.headers:
+        if self.user_agents and "User-Agent" not in request.headers:
             request.headers["User-Agent"] = random.choice(self.user_agents)
 
         if self.proxies and "proxy" not in request.meta:

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from scrapy.http import Request, TextResponse
 
@@ -43,14 +43,8 @@ class TestDynamicCrawlerMiddleware:
                 self.method = method
                 self.selector = selector
 
-        from scrapy_distributed.middlewares import dynamic as dynamic_module
-
-        original = dynamic_module.PageMethod
-        dynamic_module.PageMethod = FakePageMethod
-        try:
+        with patch("scrapy_distributed.middlewares.dynamic.PageMethod", FakePageMethod):
             mw.process_request(request, _make_spider())
-        finally:
-            dynamic_module.PageMethod = original
 
         assert request.meta["playwright"] is True
         assert len(request.meta["playwright_page_methods"]) == 1
